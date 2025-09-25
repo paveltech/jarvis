@@ -15,7 +15,7 @@ export default function Home() {
   }));
 
   return (
-    <div className="min-h-screen flex flex-col relative bg-background text-foreground overflow-hidden" data-testid="jarvis-main-interface">
+    <div className="min-h-screen flex flex-col relative bg-black text-foreground overflow-hidden" data-testid="jarvis-main-interface">
       {/* Floating Particles Background */}
       {particles.map((particle) => (
         <div
@@ -26,12 +26,6 @@ export default function Home() {
         />
       ))}
 
-      {/* JARVIS Title */}
-      <div className="absolute top-8 left-1/2 transform -translate-x-1/2 z-10">
-        <h1 className="text-4xl font-bold text-primary tracking-widest animate-glow" data-testid="jarvis-title">
-          JARVIS
-        </h1>
-      </div>
 
       {/* Main JARVIS Interface - Full Screen */}
       <JarvisInterface sessionId={sessionId} />
