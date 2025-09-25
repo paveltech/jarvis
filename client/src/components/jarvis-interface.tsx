@@ -438,11 +438,120 @@ export default function JarvisInterface({ sessionId }: JarvisInterfaceProps) {
           ))}
         </div>
 
-        {/* Central Core - Intense Glow */}
-        <div className="relative w-32 h-32 bg-gradient-radial from-cyan-400 via-cyan-500/80 to-transparent rounded-full border-4 border-cyan-400 intense-core-glow animate-pulse flex items-center justify-center">
-          <div className="w-20 h-20 bg-gradient-radial from-cyan-300/90 to-cyan-400/60 rounded-full border-2 border-cyan-300 flex items-center justify-center core-inner-glow">
-            <span className="text-cyan-100 font-bold text-lg tracking-widest drop-shadow-[0_0_10px_#00ffff]">J.A.R.V.I.S</span>
+        {/* Authentic JARVIS Central Interface */}
+        <div className="relative w-48 h-48 flex items-center justify-center">
+          
+          {/* Outermost Ring with Segmented Arcs */}
+          <div className="absolute w-48 h-48 border border-cyan-400/50 rounded-full">
+            {/* Outer arc segments */}
+            {Array.from({ length: 60 }, (_, i) => (
+              <div
+                key={`outer-arc-${i}`}
+                className={`absolute ${
+                  i % 10 === 0 ? 'w-0.5 h-4 bg-cyan-400' : 
+                  i % 5 === 0 ? 'w-px h-3 bg-cyan-400/80' : 
+                  'w-px h-2 bg-cyan-400/40'
+                }`}
+                style={{
+                  top: '-2px',
+                  left: '50%',
+                  transformOrigin: '50% 96px',
+                  transform: `translateX(-50%) rotate(${i * 6}deg)`,
+                }}
+              />
+            ))}
+            
+            {/* Technical readouts around outer ring */}
+            <div className="absolute -top-6 left-1/2 transform -translate-x-1/2 text-cyan-400/80 text-xs font-mono">
+              0000000000
+            </div>
+            <div className="absolute top-1/2 -right-8 transform -translate-y-1/2 rotate-90 text-cyan-400/80 text-xs font-mono">
+              0010100101
+            </div>
+            <div className="absolute -bottom-6 left-1/2 transform -translate-x-1/2 text-cyan-400/80 text-xs font-mono">
+              1111111111
+            </div>
+            <div className="absolute top-1/2 -left-8 transform -translate-y-1/2 -rotate-90 text-cyan-400/80 text-xs font-mono">
+              1010001010
+            </div>
           </div>
+
+          {/* Middle Ring with Measurement Indicators */}
+          <div className="absolute w-36 h-36 border border-cyan-400/70 rounded-full">
+            {/* Middle ring segments */}
+            {Array.from({ length: 36 }, (_, i) => (
+              <div
+                key={`middle-arc-${i}`}
+                className={`absolute ${
+                  i % 6 === 0 ? 'w-0.5 h-3 bg-cyan-400' : 'w-px h-2 bg-cyan-400/60'
+                }`}
+                style={{
+                  top: '-1px',
+                  left: '50%',
+                  transformOrigin: '50% 72px',
+                  transform: `translateX(-50%) rotate(${i * 10}deg)`,
+                }}
+              />
+            ))}
+            
+            {/* Quadrant numbers */}
+            <div className="absolute -top-4 left-1/2 transform -translate-x-1/2 text-cyan-400 text-sm font-mono">0</div>
+            <div className="absolute top-1/2 -right-4 transform -translate-y-1/2 text-cyan-400 text-sm font-mono">90</div>
+            <div className="absolute -bottom-4 left-1/2 transform -translate-x-1/2 text-cyan-400 text-sm font-mono">180</div>
+            <div className="absolute top-1/2 -left-4 transform -translate-y-1/2 text-cyan-400 text-sm font-mono">270</div>
+          </div>
+
+          {/* Inner Technical Ring */}
+          <div className="absolute w-28 h-28 border border-cyan-400/80 rounded-full">
+            {/* Inner precision markers */}
+            {Array.from({ length: 24 }, (_, i) => (
+              <div
+                key={`inner-precision-${i}`}
+                className="absolute w-px h-2 bg-cyan-400/70"
+                style={{
+                  top: '0px',
+                  left: '50%',
+                  transformOrigin: '50% 56px',
+                  transform: `translateX(-50%) rotate(${i * 15}deg)`,
+                }}
+              />
+            ))}
+            
+            {/* Status indicators */}
+            <div className="absolute top-2 left-1/2 transform -translate-x-1/2 w-1 h-1 bg-cyan-400 rounded-full"></div>
+            <div className="absolute bottom-2 left-1/2 transform -translate-x-1/2 w-1 h-1 bg-cyan-400 rounded-full"></div>
+            <div className="absolute top-1/2 left-2 transform -translate-y-1/2 w-1 h-1 bg-cyan-400 rounded-full"></div>
+            <div className="absolute top-1/2 right-2 transform -translate-y-1/2 w-1 h-1 bg-cyan-400 rounded-full"></div>
+          </div>
+
+          {/* Core Interface */}
+          <div className="absolute w-20 h-20 bg-gradient-radial from-cyan-500/30 via-cyan-400/20 to-transparent rounded-full border-2 border-cyan-400 intense-core-glow flex items-center justify-center">
+            <div className="w-16 h-16 bg-black/40 border border-cyan-400/60 rounded-full flex items-center justify-center">
+              <span className="text-cyan-100 font-mono text-sm tracking-[0.2em] drop-shadow-[0_0_8px_#00ffff] font-bold">
+                J.A.R.V.I.S
+              </span>
+            </div>
+          </div>
+
+          {/* Animated Scanning Arc */}
+          <div className="absolute w-40 h-40 rounded-full overflow-hidden">
+            <div 
+              className="absolute w-0.5 h-20 bg-gradient-to-t from-transparent via-cyan-400 to-transparent"
+              style={{
+                left: '50%',
+                top: '0px',
+                transformOrigin: '50% 80px',
+                transform: 'translateX(-50%)',
+                animation: 'jarvis-scan 4s linear infinite'
+              }}
+            ></div>
+          </div>
+
+          {/* Connection Lines to Outer Elements */}
+          <div className="absolute w-0.5 h-8 bg-gradient-to-t from-cyan-400 to-transparent top-0 left-1/2 transform -translate-x-1/2"></div>
+          <div className="absolute w-0.5 h-8 bg-gradient-to-b from-cyan-400 to-transparent bottom-0 left-1/2 transform -translate-x-1/2"></div>
+          <div className="absolute h-0.5 w-8 bg-gradient-to-r from-cyan-400 to-transparent top-1/2 left-0 transform -translate-y-1/2"></div>
+          <div className="absolute h-0.5 w-8 bg-gradient-to-l from-cyan-400 to-transparent top-1/2 right-0 transform -translate-y-1/2"></div>
         </div>
 
 
@@ -486,7 +595,7 @@ export default function JarvisInterface({ sessionId }: JarvisInterfaceProps) {
               // Show the conversational AI widget
               setShowConversationalAI(true);
               
-              // Wait for the custom element to be properly defined
+              // Wait for the custom element to be properly defined and API ready
               const startWidget = async () => {
                 try {
                   console.log('Waiting for ElevenLabs widget to be ready...');
@@ -494,26 +603,75 @@ export default function JarvisInterface({ sessionId }: JarvisInterfaceProps) {
                   // Wait for custom element to be defined
                   await customElements.whenDefined('elevenlabs-convai');
                   
-                  // Additional delay to ensure element is fully initialized
-                  await new Promise(resolve => setTimeout(resolve, 500));
+                  // Wait longer for the widget to fully initialize
+                  await new Promise(resolve => setTimeout(resolve, 1000));
                   
-                  const widget = document.querySelector('elevenlabs-convai');
-                  if (widget) {
-                    console.log('Widget found, attempting to start conversation...');
+                  let widget = document.querySelector('elevenlabs-convai');
+                  let retries = 0;
+                  const maxRetries = 10;
+                  
+                  // Wait for widget API to be available with retries
+                  while (retries < maxRetries) {
+                    widget = document.querySelector('elevenlabs-convai');
                     
-                    // Try the proper API first
-                    if (typeof (widget as any).startConversation === 'function') {
-                      console.log('Calling startConversation API...');
-                      await (widget as any).startConversation();
+                    if (widget) {
+                      console.log(`Widget found (attempt ${retries + 1}), checking API readiness...`);
+                      
+                      // Check for multiple possible API methods that indicate readiness
+                      const apiReady = (
+                        typeof (widget as any).startConversation === 'function' ||
+                        typeof (widget as any).start === 'function' ||
+                        typeof (widget as any).beginConversation === 'function' ||
+                        (widget as any).isReady === true ||
+                        (widget as any).ready === true
+                      );
+                      
+                      if (apiReady) {
+                        console.log('Widget API is ready, starting conversation...');
+                        
+                        // Try multiple API methods
+                        if (typeof (widget as any).startConversation === 'function') {
+                          console.log('Using startConversation API...');
+                          await (widget as any).startConversation();
+                        } else if (typeof (widget as any).start === 'function') {
+                          console.log('Using start API...');
+                          await (widget as any).start();
+                        } else if (typeof (widget as any).beginConversation === 'function') {
+                          console.log('Using beginConversation API...');
+                          await (widget as any).beginConversation();
+                        } else {
+                          console.log('Using click fallback...');
+                          (widget as HTMLElement).click();
+                        }
+                        break;
+                      } else {
+                        console.log(`API not ready yet (attempt ${retries + 1}), waiting...`);
+                        await new Promise(resolve => setTimeout(resolve, 500));
+                        retries++;
+                      }
                     } else {
-                      console.log('API not available, triggering click...');
-                      (widget as HTMLElement).click();
+                      console.log(`Widget not found (attempt ${retries + 1}), waiting...`);
+                      await new Promise(resolve => setTimeout(resolve, 500));
+                      retries++;
                     }
-                  } else {
-                    console.warn('Widget element not found after initialization');
                   }
+                  
+                  if (retries >= maxRetries) {
+                    console.warn('Widget API timeout - falling back to simple click');
+                    const finalWidget = document.querySelector('elevenlabs-convai');
+                    if (finalWidget) {
+                      (finalWidget as HTMLElement).click();
+                    }
+                  }
+                  
                 } catch (widgetError) {
                   console.error('Widget initialization/start failed:', widgetError);
+                  // Fallback to simple click even on error
+                  const errorWidget = document.querySelector('elevenlabs-convai');
+                  if (errorWidget) {
+                    console.log('Error fallback: triggering click...');
+                    (errorWidget as HTMLElement).click();
+                  }
                 }
               };
               
