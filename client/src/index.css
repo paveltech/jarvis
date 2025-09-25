@@ -1,0 +1,187 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --background: hsl(225, 25%, 6%);
+  --foreground: hsl(0, 0%, 100%);
+  --card: hsl(220, 20%, 14%);
+  --card-foreground: hsl(0, 0%, 100%);
+  --popover: hsl(225, 25%, 6%);
+  --popover-foreground: hsl(0, 0%, 100%);
+  --primary: hsl(193, 100%, 44%);
+  --primary-foreground: hsl(225, 25%, 6%);
+  --secondary: hsl(220, 20%, 14%);
+  --secondary-foreground: hsl(193, 70%, 80%);
+  --muted: hsl(220, 15%, 12%);
+  --muted-foreground: hsl(193, 30%, 60%);
+  --accent: hsl(193, 100%, 70%);
+  --accent-foreground: hsl(225, 25%, 6%);
+  --destructive: hsl(356, 90%, 54%);
+  --destructive-foreground: hsl(0, 0%, 100%);
+  --border: hsl(220, 20%, 18%);
+  --input: hsl(220, 20%, 18%);
+  --ring: hsl(193, 100%, 44%);
+  --chart-1: hsl(193, 100%, 44%);
+  --chart-2: hsl(159, 100%, 36%);
+  --chart-3: hsl(42, 92%, 56%);
+  --chart-4: hsl(147, 78%, 41%);
+  --chart-5: hsl(341, 75%, 50%);
+  --sidebar: hsl(220, 20%, 14%);
+  --sidebar-foreground: hsl(0, 0%, 100%);
+  --sidebar-primary: hsl(193, 100%, 44%);
+  --sidebar-primary-foreground: hsl(225, 25%, 6%);
+  --sidebar-accent: hsl(220, 20%, 18%);
+  --sidebar-accent-foreground: hsl(193, 100%, 70%);
+  --sidebar-border: hsl(220, 20%, 18%);
+  --sidebar-ring: hsl(193, 100%, 44%);
+  --font-sans: 'Inter', system-ui, sans-serif;
+  --font-serif: Georgia, serif;
+  --font-mono: 'Fira Code', monospace;
+  --radius: 0.75rem;
+}
+
+.dark {
+  --background: hsl(225, 25%, 6%);
+  --foreground: hsl(0, 0%, 100%);
+  --card: hsl(220, 20%, 14%);
+  --card-foreground: hsl(0, 0%, 100%);
+  --popover: hsl(225, 25%, 6%);
+  --popover-foreground: hsl(0, 0%, 100%);
+  --primary: hsl(193, 100%, 44%);
+  --primary-foreground: hsl(225, 25%, 6%);
+  --secondary: hsl(220, 20%, 14%);
+  --secondary-foreground: hsl(193, 70%, 80%);
+  --muted: hsl(220, 15%, 12%);
+  --muted-foreground: hsl(193, 30%, 60%);
+  --accent: hsl(193, 100%, 70%);
+  --accent-foreground: hsl(225, 25%, 6%);
+  --destructive: hsl(356, 90%, 54%);
+  --destructive-foreground: hsl(0, 0%, 100%);
+  --border: hsl(220, 20%, 18%);
+  --input: hsl(220, 20%, 18%);
+  --ring: hsl(193, 100%, 44%);
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+
+  body {
+    @apply font-sans antialiased bg-background text-foreground overflow-hidden;
+  }
+}
+
+@layer utilities {
+  .jarvis-ring {
+    position: absolute;
+    border: 2px solid hsl(var(--primary));
+    border-radius: 50%;
+    opacity: 0.3;
+    animation: pulse-slow 3s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+  }
+
+  .jarvis-ring:nth-child(1) { 
+    width: 200px; 
+    height: 200px; 
+    animation-delay: 0s; 
+  }
+  
+  .jarvis-ring:nth-child(2) { 
+    width: 300px; 
+    height: 300px; 
+    animation-delay: 0.5s; 
+  }
+  
+  .jarvis-ring:nth-child(3) { 
+    width: 400px; 
+    height: 400px; 
+    animation-delay: 1s; 
+  }
+
+  .voice-wave {
+    width: 4px;
+    height: 20px;
+    background: hsl(var(--primary));
+    margin: 0 2px;
+    animation: wave 1.5s ease-in-out infinite;
+    border-radius: 2px;
+  }
+
+  .voice-wave:nth-child(2) { animation-delay: 0.1s; }
+  .voice-wave:nth-child(3) { animation-delay: 0.2s; }
+  .voice-wave:nth-child(4) { animation-delay: 0.3s; }
+  .voice-wave:nth-child(5) { animation-delay: 0.4s; }
+
+  .message-glow {
+    box-shadow: 0 0 15px rgba(0, 212, 255, 0.3);
+  }
+
+  .floating-particle {
+    position: absolute;
+    width: 2px;
+    height: 2px;
+    background: hsl(var(--primary));
+    border-radius: 50%;
+    opacity: 0.6;
+    animation: float 6s ease-in-out infinite;
+  }
+
+  .hud-element {
+    border: 1px solid hsl(var(--border));
+    background: linear-gradient(135deg, rgba(0, 212, 255, 0.1) 0%, rgba(26, 35, 50, 0.8) 100%);
+    backdrop-filter: blur(10px);
+  }
+
+  .chat-bubble-user {
+    background: linear-gradient(135deg, hsl(var(--muted)) 0%, rgba(26, 35, 50, 0.9) 100%);
+    border-left: 3px solid hsl(var(--primary));
+  }
+
+  .chat-bubble-jarvis {
+    background: linear-gradient(135deg, rgba(0, 212, 255, 0.1) 0%, rgba(26, 35, 50, 0.6) 100%);
+    border-left: 3px solid hsl(var(--accent));
+  }
+}
+
+@keyframes pulse-slow {
+  0%, 100% { transform: scale(1); opacity: 0.3; }
+  50% { transform: scale(1.05); opacity: 0.6; }
+}
+
+@keyframes glow {
+  from { 
+    box-shadow: 0 0 20px hsl(var(--primary)), 0 0 40px hsl(var(--primary)), 0 0 60px hsl(var(--primary)); 
+  }
+  to { 
+    box-shadow: 0 0 30px hsl(var(--primary)), 0 0 60px hsl(var(--primary)), 0 0 90px hsl(var(--primary)); 
+  }
+}
+
+@keyframes wave {
+  0%, 100% { transform: scaleY(1); }
+  50% { transform: scaleY(1.5); }
+}
+
+@keyframes float {
+  0%, 100% { transform: translateY(0px) rotate(0deg); opacity: 0.6; }
+  50% { transform: translateY(-20px) rotate(180deg); opacity: 1; }
+}
+
+.animate-glow {
+  animation: glow 2s ease-in-out infinite alternate;
+}
+
+.animate-pulse-slow {
+  animation: pulse-slow 3s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
+.animate-spin-slow {
+  animation: spin 20s linear infinite;
+}
+
+.animate-wave {
+  animation: wave 1.5s ease-in-out infinite;
+}
