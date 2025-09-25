@@ -23,129 +23,13 @@ export default function JarvisInterface({ sessionId }: JarvisInterfaceProps) {
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
-  // Function to set up ElevenLabs widget event listeners for n8n bridge
-  const setupElevenLabsEventListeners = () => {
-    console.log('Setting up ElevenLabs event listeners...');
-    
-    // Wait for custom element to be defined
-    customElements.whenDefined('elevenlabs-convai').then(() => {
-      console.log('ElevenLabs custom element defined, setting up listeners...');
-      
-      // Listen for widget messages and relay to n8n
-      const setupWidgetBridge = () => {
-        const widget = document.querySelector('elevenlabs-convai');
-        if (!widget) return;
 
-        // Listen for speech/message events from ElevenLabs widget
-        const observer = new MutationObserver(() => {
-          // Check if widget has new content/messages
-          const widgetContent = widget.textContent || '';
-          if (widgetContent && widgetContent.trim() !== '') {
-            console.log('ElevenLabs widget content detected:', widgetContent);
-          }
-        });
-
-        observer.observe(widget, {
-          childList: true,
-          subtree: true,
-          characterData: true
-        });
-
-        // Try to intercept widget's API calls or events
-        if ((widget as any).addEventListener) {
-          ['message', 'speech', 'response', 'conversation', 'userInput', 'transcription'].forEach(eventType => {
-            (widget as any).addEventListener(eventType, (event: any) => {
-              console.log(`ElevenLabs ${eventType} event:`, event);
-              
-              // Extract message content and relay to n8n
-              const message = event.detail?.message || event.detail?.text || event.message || event.text;
-              if (message) {
-                console.log('Relaying message to n8n:', message);
-                jarvisMutation.mutate({ message, sessionId });
-              }
-            });
-          });
-        }
-
-        // Also try to hook into the widget's internal functions
-        if ((widget as any).onMessage) {
-          const originalOnMessage = (widget as any).onMessage;
-          (widget as any).onMessage = function(message: string) {
-            console.log('Intercepted ElevenLabs message:', message);
-            jarvisMutation.mutate({ message, sessionId });
-            return originalOnMessage.call(this, message);
-          };
-        }
-
-        // Monitor DOM changes more aggressively for transcription text
-        const transcriptObserver = new MutationObserver((mutations) => {
-          mutations.forEach((mutation) => {
-            if (mutation.type === 'childList') {
-              mutation.addedNodes.forEach((node) => {
-                if (node.nodeType === Node.TEXT_NODE && node.textContent?.trim()) {
-                  const text = node.textContent.trim();
-                  if (text.length > 5) { // Only relay meaningful text
-                    console.log('User speech detected:', text);
-                    jarvisMutation.mutate({ message: text, sessionId });
-                  }
-                }
-              });
-            }
-          });
-        });
-
-        transcriptObserver.observe(widget, {
-          childList: true,
-          subtree: true
-        });
-      };
-
-      // Set up the bridge with a delay to ensure widget is fully initialized
-      setTimeout(setupWidgetBridge, 2000);
-    }).catch(error => {
-      console.error('Error setting up ElevenLabs listeners:', error);
-    });
-  };
-
-  // Load ElevenLabs widget script with comprehensive error handling
+  // Voice recording functionality only - ElevenLabs widget removed
   useEffect(() => {
-    const loadElevenLabsScript = async () => {
-      try {
-        console.log('Loading ElevenLabs script...');
-        
-        // Check if script already exists
-        const existingScript = document.querySelector('script[src*="convai-widget-embed"]');
-        if (existingScript) {
-          console.log('ElevenLabs script already loaded');
-          return;
-        }
-
-        const script = document.createElement('script');
-        script.src = 'https://unpkg.com/@elevenlabs/convai-widget-embed';
-        script.async = true;
-        script.type = 'text/javascript';
-        
-        // Add script load handlers
-        const scriptLoaded = new Promise((resolve, reject) => {
-          script.onload = () => {
-            console.log('ElevenLabs script loaded successfully');
-            resolve(true);
-          };
-          script.onerror = (error) => {
-            console.error('ElevenLabs script failed to load:', error);
-            reject(error);
-          };
-        });
-
-        document.body.appendChild(script);
-        await scriptLoaded;
-        
-        // Set up ElevenLabs widget event listeners after script loads
-        setupElevenLabsEventListeners();
-        
-      } catch (error) {
-        console.error('Error loading ElevenLabs script:', error);
-      }
+    console.log('JARVIS voice recording system initialized');
+    // No external scripts needed - using built-in voice recording
+    return () => {
+      console.log('JARVIS voice recording system cleaned up');
     };
 
     // Add global error handler to catch any uncaught exceptions
@@ -251,7 +135,6 @@ export default function JarvisInterface({ sessionId }: JarvisInterfaceProps) {
     window.addEventListener('error', handleGlobalError, true);
     window.addEventListener('unhandledrejection', handleUnhandledRejection, true);
 
-    loadElevenLabsScript();
 
     return () => {
       // Restore original error handlers
@@ -578,214 +461,8 @@ export default function JarvisInterface({ sessionId }: JarvisInterfaceProps) {
         </div>
       )}
 
-      {/* Talk to JARVIS Button with Conversational AI - Center Bottom */}
+      {/* Talk to JARVIS Button with Voice Recording - Center Bottom */}
       <div className="fixed bottom-16 left-1/2 transform -translate-x-1/2 z-20">
-        <VoiceButton
-          onStartRecording={() => {
-            try {
-              console.log('Starting JARVIS conversation...');
-              // Show the conversational AI widget
-              setShowConversationalAI(true);
-              
-              // Wait for the custom element to be properly defined and API ready
-              const startWidget = async () => {
-                try {
-                  console.log('Waiting for ElevenLabs widget to be ready...');
-                  
-                  // Wait for custom element to be defined
-                  await customElements.whenDefined('elevenlabs-convai');
-                  
-                  // Wait longer for the widget to fully initialize
-                  await new Promise(resolve => setTimeout(resolve, 1000));
-                  
-                  let widget = document.querySelector('elevenlabs-convai');
-                  let retries = 0;
-                  const maxRetries = 10;
-                  
-                  // Wait for widget API to be available with retries
-                  while (retries < maxRetries) {
-                    widget = document.querySelector('elevenlabs-convai');
-                    
-                    if (widget) {
-                      console.log(`Widget found (attempt ${retries + 1}), checking API readiness...`);
-                      
-                      // Check for multiple possible API methods that indicate readiness
-                      const apiReady = (
-                        typeof (widget as any).startConversation === 'function' ||
-                        typeof (widget as any).start === 'function' ||
-                        typeof (widget as any).beginConversation === 'function' ||
-                        (widget as any).isReady === true ||
-                        (widget as any).ready === true
-                      );
-                      
-                      if (apiReady) {
-                        console.log('Widget API is ready, starting conversation...');
-                        
-                        // Try multiple API methods
-                        if (typeof (widget as any).startConversation === 'function') {
-                          console.log('Using startConversation API...');
-                          await (widget as any).startConversation();
-                        } else if (typeof (widget as any).start === 'function') {
-                          console.log('Using start API...');
-                          await (widget as any).start();
-                        } else if (typeof (widget as any).beginConversation === 'function') {
-                          console.log('Using beginConversation API...');
-                          await (widget as any).beginConversation();
-                        } else {
-                          console.log('Using click fallback...');
-                          (widget as HTMLElement).click();
-                        }
-                        break;
-                      } else {
-                        console.log(`API not ready yet (attempt ${retries + 1}), waiting...`);
-                        await new Promise(resolve => setTimeout(resolve, 500));
-                        retries++;
-                      }
-                    } else {
-                      console.log(`Widget not found (attempt ${retries + 1}), waiting...`);
-                      await new Promise(resolve => setTimeout(resolve, 500));
-                      retries++;
-                    }
-                  }
-                  
-                  if (retries >= maxRetries) {
-                    console.warn('Widget API timeout - falling back to simple click');
-                    const finalWidget = document.querySelector('elevenlabs-convai');
-                    if (finalWidget) {
-                      (finalWidget as HTMLElement).click();
-                    }
-                  }
-                  
-                } catch (widgetError) {
-                  console.error('Widget initialization/start failed:', widgetError);
-                  // Fallback to simple click even on error
-                  const errorWidget = document.querySelector('elevenlabs-convai');
-                  if (errorWidget) {
-                    console.log('Error fallback: triggering click...');
-                    (errorWidget as HTMLElement).click();
-                  }
-                }
-              };
-              
-              // Start the widget asynchronously
-              startWidget();
-              
-            } catch (error) {
-              console.error('Failed to start conversation:', error);
-            }
-          }}
-          onStopRecording={() => {
-            try {
-              console.log('Stopping JARVIS conversation...');
-              // Try to stop the ElevenLabs conversation properly
-              const widget = document.querySelector('elevenlabs-convai');
-              if (widget && typeof (widget as any).stopConversation === 'function') {
-                console.log('Stopping ElevenLabs conversation...');
-                (widget as any).stopConversation();
-              }
-            } catch (error) {
-              console.warn('Failed to stop conversation:', error);
-            } finally {
-              // Always hide the widget regardless of stop success
-              setShowConversationalAI(false);
-            }
-          }}
-          isRecording={showConversationalAI}
-          isProcessing={isProcessing}
-        />
-      </div>
-
-      {/* ElevenLabs Conversational AI Widget - Appears when activated */}
-      {showConversationalAI && (
-        <div className="fixed bottom-32 left-1/2 transform -translate-x-1/2 z-50" data-testid="elevenlabs-widget">
-          <div className="relative">
-            {/* Close button */}
-            <button 
-              onClick={() => {
-                try {
-                  console.log('Closing JARVIS widget...');
-                  // Try to stop the conversation before closing
-                  const widget = document.querySelector('elevenlabs-convai');
-                  if (widget && typeof (widget as any).stopConversation === 'function') {
-                    (widget as any).stopConversation();
-                  }
-                } catch (error) {
-                  console.warn('Failed to stop conversation on close:', error);
-                } finally {
-                  // Always close the widget
-                  setShowConversationalAI(false);
-                }
-              }}
-              className="absolute -top-2 -right-2 w-6 h-6 bg-red-500 hover:bg-red-600 text-white rounded-full text-xs font-bold z-10 border border-red-400"
-              data-testid="close-widget"
-            >
-              ×
-            </button>
-
-            {/* Manual Bridge Button */}
-            <button
-              onClick={async () => {
-                try {
-                  const widget = document.querySelector('elevenlabs-convai');
-                  if (widget) {
-                    // Look for any text content in the widget that might be user input
-                    const widgetText = widget.textContent || '';
-                    const shadowRoot = (widget as any).shadowRoot;
-                    
-                    let userMessage = '';
-                    
-                    // Try to find transcribed text in shadow DOM
-                    if (shadowRoot) {
-                      const textElements = shadowRoot.querySelectorAll('*');
-                      textElements.forEach((el: Element) => {
-                        const text = el.textContent?.trim() || '';
-                        if (text && text.length > 5 && !text.includes('listening') && !text.includes('Processing')) {
-                          userMessage = text;
-                        }
-                      });
-                    }
-                    
-                    // Fallback to prompt user for message
-                    if (!userMessage) {
-                      userMessage = prompt('Enter your message to send to JARVIS:') || '';
-                    }
-                    
-                    if (userMessage) {
-                      console.log('Manually sending message to n8n:', userMessage);
-                      jarvisMutation.mutate({ message: userMessage, sessionId });
-                      toast({
-                        title: "Message sent to JARVIS",
-                        description: `Sent: "${userMessage.substring(0, 50)}..."`
-                      });
-                    }
-                  }
-                } catch (error) {
-                  console.error('Error sending message:', error);
-                  toast({
-                    title: "Error",
-                    description: "Failed to send message to JARVIS"
-                  });
-                }
-              }}
-              className="absolute -top-2 -left-2 w-6 h-6 bg-blue-500 hover:bg-blue-600 text-white rounded-full text-xs font-bold z-10 border border-blue-400"
-              data-testid="send-to-n8n"
-              title="Send to n8n"
-            >
-              →
-            </button>
-            
-            {/* Widget container with JARVIS styling */}
-            <div className="elevenlabs-widget-container">
-              <div dangerouslySetInnerHTML={{
-                __html: `<elevenlabs-convai agent-id="${import.meta.env.VITE_ELEVENLABS_AGENT_ID || 'agent_9001k60fwb0pfwtvnfmz9zh24xh4'}"></elevenlabs-convai>`
-              }} />
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Legacy Voice Button Backup - Hidden by default */}
-      <div className="fixed bottom-8 right-32 z-10 hidden">
         <VoiceButton
           onStartRecording={startRecording}
           onStopRecording={stopRecordingHandler}
@@ -793,6 +470,7 @@ export default function JarvisInterface({ sessionId }: JarvisInterfaceProps) {
           isProcessing={isProcessing}
         />
       </div>
+
 
       {/* Temporary Text Input for Testing n8n Webhook - Keep for debugging */}
       <div className="fixed bottom-8 left-8 z-10 flex space-x-2 opacity-50 hover:opacity-100 transition-opacity">
