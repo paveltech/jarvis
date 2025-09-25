@@ -360,6 +360,7 @@ export default function JarvisInterface({ sessionId }: JarvisInterfaceProps) {
       // Invalidate conversations to trigger refetch
       queryClient.invalidateQueries({ queryKey: ['/api/conversations', sessionId] });
       setIsWaitingForResponse(false);
+      setIsProcessing(false); // Always reset processing state
       
       // Play audio response if available
       if (jarvisResponse.audioUrl) {
@@ -413,6 +414,18 @@ export default function JarvisInterface({ sessionId }: JarvisInterfaceProps) {
           }, 1000);
         }
       }
+    },
+    onError: (error) => {
+      console.error('JARVIS request failed:', error);
+      setIsWaitingForResponse(false);
+      setIsProcessing(false); // Reset processing state on error
+      setConversationMode(false); // Exit conversation mode on error
+      setStatus("Error occurred. Ready for your command, sir.");
+      toast({
+        title: "JARVIS Error",
+        description: "Failed to process your request. Please try again.",
+        variant: "destructive",
+      });
     },
   });
 
@@ -688,8 +701,31 @@ export default function JarvisInterface({ sessionId }: JarvisInterfaceProps) {
         </div>
       )}
 
-      {/* Voice Interface Toggle - Top Right */}
-      <div className="fixed top-8 right-8 z-20">
+      {/* Top Right Controls */}
+      <div className="fixed top-8 right-8 z-20 flex flex-col space-y-2">
+        {/* Emergency Stop Button */}
+        {(isProcessing || conversationMode || isRecording) && (
+          <Button
+            onClick={() => {
+              setIsProcessing(false);
+              setConversationMode(false);
+              setIsRecording(false);
+              setIsWaitingForResponse(false);
+              setVoiceVisualizationVisible(false);
+              setStatus("Ready for your command, sir.");
+              // Stop media recorder if active
+              if (mediaRecorderRef.current && mediaRecorderRef.current.state !== 'inactive') {
+                mediaRecorderRef.current.stop();
+              }
+              console.log('Emergency stop: All states reset');
+            }}
+            className="bg-red-600/90 hover:bg-red-600 border-2 border-red-400 text-white text-sm font-bold"
+          >
+            🛑 STOP
+          </Button>
+        )}
+        
+        {/* Voice Interface Toggle */}
         <Button
           onClick={() => setUseElevenLabsWidget(!useElevenLabsWidget)}
           className="bg-gray-900/90 backdrop-blur-sm border-2 border-cyan-400/60 text-cyan-400 hover:bg-cyan-900/40 text-sm"
