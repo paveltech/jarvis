@@ -471,18 +471,9 @@ export default function JarvisInterface({ sessionId }: JarvisInterfaceProps) {
         const audioBlob = new Blob(audioChunksRef.current, { type: mimeType });
         console.log('Final blob type:', audioBlob.type, 'Size:', audioBlob.size);
         
-        // Convert problematic formats to WAV for better OpenAI compatibility
+        // OpenAI supports MP4 directly - skip problematic WAV conversion
         let finalAudioBlob = audioBlob;
-        if (audioBlob.type.includes('opus') || audioBlob.type.includes('webm')) {
-          console.log('Converting audio to WAV for better OpenAI compatibility...');
-          try {
-            finalAudioBlob = await convertToWav(audioBlob);
-            console.log('Converted to WAV, new size:', finalAudioBlob.size);
-          } catch (error) {
-            console.warn('WAV conversion failed, using original format:', error);
-            finalAudioBlob = audioBlob;
-          }
-        }
+        console.log('Using original audio format for OpenAI:', audioBlob.type);
         
         await processAudioInput(finalAudioBlob);
         
