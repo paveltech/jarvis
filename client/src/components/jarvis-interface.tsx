@@ -59,9 +59,19 @@ export default function JarvisInterface({ sessionId }: JarvisInterfaceProps) {
       const response = await apiRequest('POST', '/api/jarvis', request);
       return response.json();
     },
-    onSuccess: () => {
+    onSuccess: (jarvisResponse: JarvisResponse) => {
       // Invalidate conversations to trigger refetch
       queryClient.invalidateQueries({ queryKey: ['/api/conversations', sessionId] });
+      
+      // Play audio response if available
+      if (jarvisResponse.audioUrl) {
+        setStatus("JARVIS is responding...");
+        const audio = new Audio(jarvisResponse.audioUrl);
+        audio.onended = () => setStatus("Ready for your command, sir");
+        audio.play().catch(console.error);
+      } else {
+        setStatus("Ready for your command, sir");
+      }
     },
   });
 
