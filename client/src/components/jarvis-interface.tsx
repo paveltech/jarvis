@@ -65,28 +65,12 @@ export default function JarvisInterface({ sessionId }: JarvisInterfaceProps) {
       
       // Play audio response if available
       if (jarvisResponse.audioUrl) {
-        console.log("🔊 Audio URL received:", jarvisResponse.audioUrl);
         setStatus("JARVIS is responding...");
         const audio = new Audio(jarvisResponse.audioUrl);
-        
-        audio.onloadstart = () => console.log("🔊 Audio loading started");
-        audio.oncanplay = () => console.log("🔊 Audio can play");
-        audio.onplay = () => console.log("🔊 Audio started playing");
-        audio.onended = () => {
-          console.log("🔊 Audio finished playing");
-          setStatus("Ready for your command, sir");
-        };
-        audio.onerror = (e) => {
-          console.error("🔊 Audio playback error:", e);
-          setStatus("Ready for your command, sir");
-        };
-        
-        audio.play().catch((error) => {
-          console.error("🔊 Audio play failed:", error);
-          setStatus("Ready for your command, sir");
-        });
+        audio.onended = () => setStatus("Ready for your command, sir");
+        audio.onerror = () => setStatus("Ready for your command, sir");
+        audio.play().catch(() => setStatus("Ready for your command, sir"));
       } else {
-        console.log("🔊 No audio URL in response");
         setStatus("Ready for your command, sir");
       }
     },

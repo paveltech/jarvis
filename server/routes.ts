@@ -110,9 +110,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
       let audioUrl: string | undefined;
       try {
         const elevenLabsApiKey = process.env.ELEVENLABS_API_KEY || process.env.ELEVENLABS_API_KEY_ENV_VAR || "default_key";
-        // Force Rachel voice - ignore environment variable to fix voice limit error
-        const voiceId = "21m00Tcm4TlvDq8ikWAM"; // Rachel - guaranteed built-in voice
-        console.log("🔧 FORCING Rachel voice to fix custom voice limit error");
+        // Use Antoni - built-in German male voice (perfect for JARVIS)
+        const voiceId = "ErXwobaYiN019PkySvjV"; // Antoni - built-in German male voice
+        console.log("🇩🇪 Using Antoni (German) voice for JARVIS");
         
         console.log("Generating speech for response:", jarvisResponse.substring(0, 100) + "...");
         console.log("Using voice ID:", voiceId);
@@ -127,7 +127,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           },
           body: JSON.stringify({
             text: jarvisResponse,
-            model_id: "eleven_monolingual_v1",
+            model_id: "eleven_multilingual_v2", // Use multilingual model for German
             voice_settings: {
               stability: 0.5,
               similarity_boost: 0.5,
