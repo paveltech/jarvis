@@ -23,7 +23,9 @@ export default function JarvisInterface({ sessionId }: JarvisInterfaceProps) {
   const transcribeMutation = useMutation({
     mutationFn: async (audioBlob: Blob): Promise<{ text: string; duration: number }> => {
       const formData = new FormData();
-      formData.append('audio', audioBlob, 'recording.wav');
+      // Use correct file extension based on audio type
+      const fileExtension = audioBlob.type.includes('webm') ? 'webm' : 'wav';
+      formData.append('audio', audioBlob, `recording.${fileExtension}`);
       
       const response = await fetch('/api/transcribe', {
         method: 'POST',
@@ -52,8 +54,25 @@ export default function JarvisInterface({ sessionId }: JarvisInterfaceProps) {
 
   const startRecording = async () => {
     try {
-      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-      const mediaRecorder = new MediaRecorder(stream);
+      const stream = await navigator.mediaDevices.getUserMedia({ 
+        audio: {
+          echoCancellation: true,
+          noiseSuppression: true,
+          sampleRate: 44100,
+        } 
+      });
+      
+      // Use audio/webm;codecs=opus which is supported by OpenAI Whisper
+      const options = { mimeType: 'audio/webm;codecs=opus' };
+      let mediaRecorder;
+      
+      if (MediaRecorder.isTypeSupported(options.mimeType)) {
+        mediaRecorder = new MediaRecorder(stream, options);
+      } else {
+        // Fallback to default if webm is not supported
+        mediaRecorder = new MediaRecorder(stream);
+      }
+      
       mediaRecorderRef.current = mediaRecorder;
       audioChunksRef.current = [];
 
@@ -62,7 +81,9 @@ export default function JarvisInterface({ sessionId }: JarvisInterfaceProps) {
       };
 
       mediaRecorder.onstop = async () => {
-        const audioBlob = new Blob(audioChunksRef.current, { type: 'audio/wav' });
+        // Use the actual MIME type from the recorder
+        const mimeType = mediaRecorder.mimeType || 'audio/webm';
+        const audioBlob = new Blob(audioChunksRef.current, { type: mimeType });
         await processAudioInput(audioBlob);
         
         // Stop all tracks to free up microphone
