@@ -1,24 +1,22 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import JarvisInterface from "@/components/jarvis-interface";
-import ChatSidebar from "@/components/chat-sidebar";
-import SystemPanel from "@/components/system-panel";
 
 export default function Home() {
   const [sessionId] = useState(() => `session_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`);
 
-  // Add floating particles
-  const particles = Array.from({ length: 4 }, (_, i) => ({
+  // Add floating particles for sci-fi background
+  const particles = Array.from({ length: 12 }, (_, i) => ({
     id: i,
     style: {
-      top: `${[10, 30, 70, 50][i]}%`,
-      left: `${[15, 85, 10, 90][i]}%`,
-      animationDelay: `${i * 2}s`,
+      top: `${Math.random() * 80 + 10}%`,
+      left: `${Math.random() * 80 + 10}%`,
+      animationDelay: `${i * 1.5}s`,
     },
   }));
 
   return (
-    <div className="min-h-screen flex relative bg-background text-foreground" data-testid="jarvis-main-interface">
-      {/* Floating Particles */}
+    <div className="min-h-screen flex flex-col relative bg-background text-foreground overflow-hidden" data-testid="jarvis-main-interface">
+      {/* Floating Particles Background */}
       {particles.map((particle) => (
         <div
           key={particle.id}
@@ -28,14 +26,15 @@ export default function Home() {
         />
       ))}
 
-      {/* Chat Sidebar */}
-      <ChatSidebar sessionId={sessionId} />
+      {/* JARVIS Title */}
+      <div className="absolute top-8 left-1/2 transform -translate-x-1/2 z-10">
+        <h1 className="text-4xl font-bold text-primary tracking-widest animate-glow" data-testid="jarvis-title">
+          JARVIS
+        </h1>
+      </div>
 
-      {/* Main Content */}
+      {/* Main JARVIS Interface - Full Screen */}
       <JarvisInterface sessionId={sessionId} />
-
-      {/* System Panel */}
-      <SystemPanel />
     </div>
   );
 }

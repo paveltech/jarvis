@@ -2,9 +2,7 @@ import { useState, useRef } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useToast } from "@/hooks/use-toast";
 import VoiceButton from "./voice-button";
-import { Button } from "@/components/ui/button";
 import { apiRequest } from "@/lib/queryClient";
-import { recordAudio, stopRecording } from "@/lib/audio";
 import type { JarvisRequest, JarvisResponse } from "@shared/schema";
 
 interface JarvisInterfaceProps {
@@ -13,7 +11,7 @@ interface JarvisInterfaceProps {
 
 export default function JarvisInterface({ sessionId }: JarvisInterfaceProps) {
   const [isRecording, setIsRecording] = useState(false);
-  const [status, setStatus] = useState("All systems operational, sir. Ready for your command.");
+  const [status, setStatus] = useState("Ready for your command.");
   const [voiceVisualizationVisible, setVoiceVisualizationVisible] = useState(false);
   
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
@@ -131,85 +129,105 @@ export default function JarvisInterface({ sessionId }: JarvisInterfaceProps) {
 
   const isProcessing = transcribeMutation.isPending || jarvisMutation.isPending;
 
-  const quickActions = [
-    { icon: "📅", label: "Calendar" },
-    { icon: "📧", label: "Email" },
-    { icon: "📝", label: "Content" },
-    { icon: "👥", label: "Contacts" },
-  ];
-
   return (
-    <div className="flex-1 flex flex-col items-center justify-center p-8 relative" data-testid="jarvis-main-content">
-      {/* Central JARVIS Interface */}
-      <div className="relative flex items-center justify-center mb-16" data-testid="jarvis-hub">
-        {/* Animated Rings */}
-        <div className="jarvis-ring" />
-        <div className="jarvis-ring" />
-        <div className="jarvis-ring" />
+    <div className="flex-1 flex flex-col items-center justify-center relative" data-testid="jarvis-main-content">
+      
+      {/* Central JARVIS Hub - Inspired by Iron Man */}
+      <div className="relative flex items-center justify-center mb-24" data-testid="jarvis-hub">
         
-        {/* Central Hub */}
-        <div className="relative w-48 h-48 bg-gradient-to-br from-primary/20 to-transparent rounded-full border-2 border-primary/50 flex items-center justify-center animate-pulse-slow">
-          <div className="w-32 h-32 bg-gradient-to-br from-primary/30 to-transparent rounded-full border border-primary/60 flex items-center justify-center">
-            <div className="w-16 h-16 bg-primary/20 rounded-full border border-primary/80 flex items-center justify-center animate-glow">
-              <span className="text-primary font-bold text-lg tracking-widest">J.A.R.V.I.S</span>
+        {/* Outermost Ring - Slow rotation */}
+        <div className="absolute w-96 h-96 border border-primary/20 rounded-full animate-spin-slow">
+          {/* Outer ring details */}
+          <div className="absolute top-0 left-1/2 w-8 h-1 bg-primary/60 transform -translate-x-1/2" />
+          <div className="absolute bottom-0 left-1/2 w-8 h-1 bg-primary/60 transform -translate-x-1/2" />
+          <div className="absolute left-0 top-1/2 w-1 h-8 bg-primary/60 transform -translate-y-1/2" />
+          <div className="absolute right-0 top-1/2 w-1 h-8 bg-primary/60 transform -translate-y-1/2" />
+        </div>
+
+        {/* Middle Ring */}
+        <div className="absolute w-80 h-80 border border-primary/40 rounded-full animate-pulse-slow">
+          {/* Technical markings */}
+          {Array.from({ length: 24 }, (_, i) => (
+            <div
+              key={i}
+              className="absolute w-1 h-2 bg-primary/30"
+              style={{
+                top: '2px',
+                left: '50%',
+                transformOrigin: '50% 160px',
+                transform: `translateX(-50%) rotate(${i * 15}deg)`,
+              }}
+            />
+          ))}
+        </div>
+
+        {/* Inner Ring */}
+        <div className="absolute w-64 h-64 border-2 border-primary/60 rounded-full animate-glow">
+          {/* Inner ring segments */}
+          {Array.from({ length: 8 }, (_, i) => (
+            <div
+              key={i}
+              className="absolute w-16 h-1 bg-primary/50"
+              style={{
+                top: '50%',
+                left: '50%',
+                transformOrigin: '0 0',
+                transform: `translate(-50%, -50%) rotate(${i * 45}deg) translateX(120px)`,
+              }}
+            />
+          ))}
+        </div>
+
+        {/* Central Core */}
+        <div className="relative w-48 h-48 bg-gradient-radial from-primary/30 via-primary/10 to-transparent rounded-full border-2 border-primary flex items-center justify-center animate-pulse">
+          <div className="w-32 h-32 bg-gradient-radial from-primary/40 via-primary/20 to-transparent rounded-full border border-primary/80 flex items-center justify-center">
+            <div className="w-20 h-20 bg-gradient-radial from-primary/60 to-primary/20 rounded-full border-2 border-primary animate-glow flex items-center justify-center">
+              <span className="text-primary font-bold text-xl tracking-widest drop-shadow-lg">J.A.R.V.I.S</span>
             </div>
           </div>
         </div>
 
-        {/* HUD Elements */}
-        <div className="absolute top-0 left-0 w-20 h-1 bg-primary/60" />
-        <div className="absolute top-0 right-0 w-20 h-1 bg-primary/60" />
-        <div className="absolute bottom-0 left-0 w-20 h-1 bg-primary/60" />
-        <div className="absolute bottom-0 right-0 w-20 h-1 bg-primary/60" />
+        {/* HUD Corner Elements */}
+        <div className="absolute -top-4 -left-4 w-8 h-8 border-t-2 border-l-2 border-primary/60" />
+        <div className="absolute -top-4 -right-4 w-8 h-8 border-t-2 border-r-2 border-primary/60" />
+        <div className="absolute -bottom-4 -left-4 w-8 h-8 border-b-2 border-l-2 border-primary/60" />
+        <div className="absolute -bottom-4 -right-4 w-8 h-8 border-b-2 border-r-2 border-primary/60" />
       </div>
 
-      {/* Voice Interaction Section */}
-      <div className="text-center space-y-8">
-        {/* Talk to JARVIS Button */}
+      {/* Talk to JARVIS Button */}
+      <div className="relative z-10">
         <VoiceButton
           onStartRecording={startRecording}
           onStopRecording={stopRecordingHandler}
           isRecording={isRecording}
           isProcessing={isProcessing}
         />
+      </div>
 
-        {/* Voice Visualization */}
-        {voiceVisualizationVisible && (
-          <div className="flex items-center justify-center space-x-1" data-testid="voice-visualization">
-            <div className="voice-wave" />
-            <div className="voice-wave" />
-            <div className="voice-wave" />
-            <div className="voice-wave" />
-            <div className="voice-wave" />
-          </div>
-        )}
+      {/* Voice Visualization */}
+      {voiceVisualizationVisible && (
+        <div className="flex items-center justify-center space-x-1 mt-8" data-testid="voice-visualization">
+          <div className="voice-wave" />
+          <div className="voice-wave" />
+          <div className="voice-wave" />
+          <div className="voice-wave" />
+          <div className="voice-wave" />
+        </div>
+      )}
 
-        {/* Status Text */}
-        <p className="text-muted-foreground text-lg" data-testid="status-text">
+      {/* Status Text - Minimal and clean */}
+      <div className="absolute bottom-16 left-1/2 transform -translate-x-1/2">
+        <p className="text-primary/80 text-sm font-medium tracking-wide" data-testid="status-text">
           {status}
         </p>
-
-        {/* Quick Actions */}
-        <div className="flex space-x-4">
-          {quickActions.map((action, index) => (
-            <Button
-              key={index}
-              variant="ghost"
-              className="hud-element rounded-lg px-4 py-2 text-sm text-accent hover:bg-primary/10 transition-colors"
-              data-testid={`quick-action-${index}`}
-            >
-              {action.icon} {action.label}
-            </Button>
-          ))}
-        </div>
       </div>
 
       {/* Processing Overlay */}
       {isProcessing && (
-        <div className="fixed inset-0 bg-background/80 backdrop-blur-sm flex items-center justify-center z-50" data-testid="processing-overlay">
+        <div className="fixed inset-0 bg-background/90 backdrop-blur-sm flex items-center justify-center z-50" data-testid="processing-overlay">
           <div className="text-center">
-            <div className="w-16 h-16 border-4 border-primary/30 border-t-primary rounded-full animate-spin mb-4" />
-            <p className="text-accent font-medium">JARVIS is processing your request...</p>
+            <div className="w-20 h-20 border-4 border-primary/30 border-t-primary rounded-full animate-spin mb-6" />
+            <p className="text-primary font-medium text-lg tracking-wide">Processing your request...</p>
           </div>
         </div>
       )}
