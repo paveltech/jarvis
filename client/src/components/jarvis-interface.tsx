@@ -333,8 +333,18 @@ export default function JarvisInterface({ sessionId }: JarvisInterfaceProps) {
         </div>
       )}
 
+      {/* Talk to JARVIS Button - Center Bottom */}
+      <div className="fixed bottom-16 left-1/2 transform -translate-x-1/2 z-20">
+        <VoiceButton
+          onStartRecording={startRecording}
+          onStopRecording={stopRecordingHandler}
+          isRecording={isRecording}
+          isProcessing={isProcessing}
+        />
+      </div>
+
       {/* ElevenLabs Conversational AI Widget - Bottom Right Corner */}
-      <div className="fixed bottom-8 right-8 z-50">
+      <div className="fixed bottom-16 right-16 z-50" data-testid="elevenlabs-widget">
         <div className="elevenlabs-widget-container">
           <div dangerouslySetInnerHTML={{
             __html: '<elevenlabs-convai agent-id="agent_9001k60fwb0pfwtvnfmz9zh24xh4"></elevenlabs-convai>'
@@ -342,7 +352,7 @@ export default function JarvisInterface({ sessionId }: JarvisInterfaceProps) {
         </div>
       </div>
 
-      {/* Legacy Voice Button - Hidden by default, can be shown for testing */}
+      {/* Legacy Voice Button Backup - Hidden by default */}
       <div className="fixed bottom-8 right-32 z-10 hidden">
         <VoiceButton
           onStartRecording={startRecording}
