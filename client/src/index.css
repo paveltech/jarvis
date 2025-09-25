@@ -251,6 +251,101 @@
   100% { transform: translateX(-50%) rotate(360deg); opacity: 0; }
 }
 
+/* Tony Stark Arc Reactor Heartbeat Animations */
+@keyframes jarvis-core-pulse {
+  0%, 100% { 
+    transform: scale(1);
+    box-shadow: 
+      0 0 20px rgba(0, 255, 255, 0.4),
+      0 0 40px rgba(0, 255, 255, 0.2),
+      inset 0 0 20px rgba(0, 255, 255, 0.1);
+  }
+  12% { 
+    transform: scale(1.03);
+    box-shadow: 
+      0 0 25px rgba(0, 255, 255, 0.6),
+      0 0 50px rgba(0, 255, 255, 0.3),
+      inset 0 0 25px rgba(0, 255, 255, 0.15);
+  }
+  24% { 
+    transform: scale(1);
+    box-shadow: 
+      0 0 20px rgba(0, 255, 255, 0.4),
+      0 0 40px rgba(0, 255, 255, 0.2),
+      inset 0 0 20px rgba(0, 255, 255, 0.1);
+  }
+  35% { 
+    transform: scale(1.05);
+    box-shadow: 
+      0 0 30px rgba(0, 255, 255, 0.8),
+      0 0 60px rgba(0, 255, 255, 0.4),
+      inset 0 0 30px rgba(0, 255, 255, 0.2);
+  }
+  50% { 
+    transform: scale(1);
+    box-shadow: 
+      0 0 20px rgba(0, 255, 255, 0.4),
+      0 0 40px rgba(0, 255, 255, 0.2),
+      inset 0 0 20px rgba(0, 255, 255, 0.1);
+  }
+}
+
+@keyframes jarvis-glow-breath {
+  0%, 100% { 
+    opacity: 0.3;
+    transform: scale(1);
+    filter: blur(1px);
+  }
+  12% { 
+    opacity: 0.5;
+    transform: scale(1.02);
+    filter: blur(2px);
+  }
+  24% { 
+    opacity: 0.35;
+    transform: scale(1);
+    filter: blur(1px);
+  }
+  35% { 
+    opacity: 0.7;
+    transform: scale(1.04);
+    filter: blur(3px);
+  }
+  50% { 
+    opacity: 0.4;
+    transform: scale(1);
+    filter: blur(1px);
+  }
+}
+
+@keyframes jarvis-text-glow {
+  0%, 100% { 
+    text-shadow: 
+      0 0 5px rgba(0, 255, 255, 0.8),
+      0 0 10px rgba(0, 255, 255, 0.4);
+  }
+  12% { 
+    text-shadow: 
+      0 0 8px rgba(0, 255, 255, 1),
+      0 0 15px rgba(0, 255, 255, 0.6);
+  }
+  24% { 
+    text-shadow: 
+      0 0 5px rgba(0, 255, 255, 0.8),
+      0 0 10px rgba(0, 255, 255, 0.4);
+  }
+  35% { 
+    text-shadow: 
+      0 0 10px rgba(0, 255, 255, 1),
+      0 0 20px rgba(0, 255, 255, 0.8);
+  }
+  50% { 
+    text-shadow: 
+      0 0 5px rgba(0, 255, 255, 0.8),
+      0 0 10px rgba(0, 255, 255, 0.4);
+  }
+}
+
 .animate-glow {
   animation: glow 2s ease-in-out infinite alternate;
 }
@@ -265,6 +360,28 @@
 
 .animate-wave {
   animation: wave 1.5s ease-in-out infinite;
+}
+
+/* Tony Stark Arc Reactor Heartbeat Animations */
+.animate-jarvis-core-pulse {
+  animation: jarvis-core-pulse 2.2s ease-in-out infinite;
+}
+
+.animate-jarvis-glow-breath {
+  animation: jarvis-glow-breath 2.2s ease-in-out infinite;
+}
+
+.animate-jarvis-text-glow {
+  animation: jarvis-text-glow 2.2s ease-in-out infinite;
+}
+
+/* Accessibility: Respect user's preference for reduced motion */
+@media (prefers-reduced-motion: reduce) {
+  .animate-jarvis-core-pulse,
+  .animate-jarvis-glow-breath,
+  .animate-jarvis-text-glow {
+    animation: none;
+  }
 }
 
 /* ElevenLabs Widget Styling */

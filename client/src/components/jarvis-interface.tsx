@@ -350,7 +350,7 @@ export default function JarvisInterface({ sessionId }: JarvisInterfaceProps) {
       <div className="relative flex items-center justify-center" data-testid="jarvis-hub">
         
         {/* Outer Technical Ring - 600px */}
-        <div className="absolute w-[600px] h-[600px] border border-cyan-400/40 rounded-full animate-spin-slow">
+        <div className="absolute w-[600px] h-[600px] border border-cyan-400/40 rounded-full">
           {/* Outer ring segments */}
           {Array.from({ length: 60 }, (_, i) => (
             <div
@@ -524,27 +524,24 @@ export default function JarvisInterface({ sessionId }: JarvisInterfaceProps) {
             <div className="absolute top-1/2 right-2 transform -translate-y-1/2 w-1 h-1 bg-cyan-400 rounded-full"></div>
           </div>
 
-          {/* Core Interface */}
-          <div className="absolute w-20 h-20 bg-gradient-radial from-cyan-500/30 via-cyan-400/20 to-transparent rounded-full border-2 border-cyan-400 intense-core-glow flex items-center justify-center">
-            <div className="w-16 h-16 bg-black/40 border border-cyan-400/60 rounded-full flex items-center justify-center">
-              <span className="text-cyan-100 font-mono text-sm tracking-[0.2em] drop-shadow-[0_0_8px_#00ffff] font-bold">
-                J.A.R.V.I.S
-              </span>
+          {/* Tony Stark Arc Reactor Core - Heartbeat Pulsation */}
+          <div className="absolute w-24 h-24 flex items-center justify-center">
+            {/* Outer Halo - Breathing Glow */}
+            <div className="absolute w-24 h-24 bg-gradient-radial from-cyan-400/20 via-cyan-400/10 to-transparent rounded-full animate-jarvis-glow-breath"></div>
+            
+            {/* Core Shell - Main Pulsing Heart */}
+            <div className="absolute w-20 h-20 bg-gradient-radial from-cyan-500/40 via-cyan-400/25 to-transparent rounded-full border-2 border-cyan-400 animate-jarvis-core-pulse flex items-center justify-center">
+              {/* Inner Heart Chamber */}
+              <div className="w-16 h-16 bg-gradient-radial from-black/60 via-black/40 to-black/20 border border-cyan-400/80 rounded-full flex items-center justify-center relative overflow-hidden">
+                {/* Central Arc Reactor Glow */}
+                <div className="absolute inset-1 bg-gradient-radial from-cyan-400/30 to-transparent rounded-full"></div>
+                
+                {/* J.A.R.V.I.S Text with Heartbeat Glow */}
+                <span className="relative z-10 text-cyan-100 font-mono text-sm tracking-[0.2em] font-bold animate-jarvis-text-glow">
+                  J.A.R.V.I.S
+                </span>
+              </div>
             </div>
-          </div>
-
-          {/* Animated Scanning Arc */}
-          <div className="absolute w-40 h-40 rounded-full overflow-hidden">
-            <div 
-              className="absolute w-0.5 h-20 bg-gradient-to-t from-transparent via-cyan-400 to-transparent"
-              style={{
-                left: '50%',
-                top: '0px',
-                transformOrigin: '50% 80px',
-                transform: 'translateX(-50%)',
-                animation: 'jarvis-scan 4s linear infinite'
-              }}
-            ></div>
           </div>
 
           {/* Connection Lines to Outer Elements */}
@@ -555,10 +552,6 @@ export default function JarvisInterface({ sessionId }: JarvisInterfaceProps) {
         </div>
 
 
-        {/* Scanner Beam */}
-        <div className="absolute w-[360px] h-[360px] rounded-full overflow-hidden">
-          <div className="jarvis-scanner w-0.5 h-full bg-gradient-to-t from-transparent via-cyan-400 to-transparent absolute left-1/2 transform -translate-x-1/2 animate-scan-beam"></div>
-        </div>
 
         {/* Corner HUD Elements */}
         <div className="absolute -top-8 -left-8 w-16 h-16 border-t-2 border-l-2 border-cyan-400/60">
