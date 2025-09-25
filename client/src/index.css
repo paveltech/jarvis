@@ -414,3 +414,51 @@
     filter: blur(4px);
   }
 }
+
+/* Hide ElevenLabs default widget elements that create white bars */
+elevenlabs-convai * {
+  background: transparent !important;
+}
+
+/* Target specific ElevenLabs widget elements that might cause white bars */
+elevenlabs-convai .el-widget-header,
+elevenlabs-convai .el-widget-toolbar,
+elevenlabs-convai .el-widget-status,
+elevenlabs-convai .widget-header,
+elevenlabs-convai .widget-toolbar,
+elevenlabs-convai .widget-status {
+  display: none !important;
+  background: transparent !important;
+}
+
+/* Style ElevenLabs widget buttons to match JARVIS theme */
+elevenlabs-convai button,
+elevenlabs-convai .el-button,
+elevenlabs-convai .widget-button {
+  background: rgba(239, 68, 68, 0.8) !important;
+  border: 1px solid rgba(248, 113, 113, 0.6) !important;
+  color: white !important;
+  border-radius: 20px !important;
+  backdrop-filter: blur(10px) !important;
+  box-shadow: 0 0 10px rgba(239, 68, 68, 0.3) !important;
+}
+
+/* Hide any white overlay or chrome elements */
+elevenlabs-convai::before,
+elevenlabs-convai::after,
+elevenlabs-convai *::before,
+elevenlabs-convai *::after {
+  background: transparent !important;
+  border: none !important;
+  box-shadow: none !important;
+}
+
+/* Ensure all child elements have transparent backgrounds */
+elevenlabs-convai > * {
+  background: transparent !important;
+}
+
+/* Target shadow DOM elements if present */
+elevenlabs-convai::-webkit-scrollbar {
+  display: none !important;
+}

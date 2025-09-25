@@ -532,12 +532,12 @@ export default function JarvisInterface({ sessionId }: JarvisInterfaceProps) {
             {/* Core Shell - Main Pulsing Heart */}
             <div className="absolute w-20 h-20 bg-gradient-radial from-cyan-500/40 via-cyan-400/25 to-transparent rounded-full border-2 border-cyan-400 animate-jarvis-core-pulse flex items-center justify-center">
               {/* Inner Heart Chamber */}
-              <div className="w-16 h-16 bg-gradient-radial from-black/60 via-black/40 to-black/20 border border-cyan-400/80 rounded-full flex items-center justify-center relative overflow-hidden">
+              <div className="w-20 h-20 bg-gradient-radial from-black/60 via-black/40 to-black/20 border border-cyan-400/80 rounded-full flex items-center justify-center relative">
                 {/* Central Arc Reactor Glow */}
                 <div className="absolute inset-1 bg-gradient-radial from-cyan-400/30 to-transparent rounded-full"></div>
                 
                 {/* J.A.R.V.I.S Text with Heartbeat Glow */}
-                <span className="relative z-10 text-cyan-100 font-mono text-sm tracking-[0.2em] font-bold animate-jarvis-text-glow">
+                <span className="relative z-10 text-cyan-100 font-mono text-xs tracking-[0.15em] font-bold animate-jarvis-text-glow whitespace-nowrap">
                   J.A.R.V.I.S
                 </span>
               </div>
@@ -726,7 +726,7 @@ export default function JarvisInterface({ sessionId }: JarvisInterfaceProps) {
             {/* Widget container with JARVIS styling */}
             <div className="elevenlabs-widget-container">
               <div dangerouslySetInnerHTML={{
-                __html: '<elevenlabs-convai agent-id="agent_9001k60fwb0pfwtvnfmz9zh24xh4"></elevenlabs-convai>'
+                __html: `<elevenlabs-convai agent-id="${import.meta.env.VITE_ELEVENLABS_AGENT_ID || 'agent_9001k60fwb0pfwtvnfmz9zh24xh4'}"></elevenlabs-convai>`
               }} />
             </div>
           </div>
