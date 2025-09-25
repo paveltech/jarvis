@@ -110,8 +110,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       let audioUrl: string | undefined;
       try {
         const elevenLabsApiKey = process.env.ELEVENLABS_API_KEY || process.env.ELEVENLABS_API_KEY_ENV_VAR || "default_key";
-        // Use built-in voice that's available to all accounts (Adam - deep male voice)
-        const voiceId = process.env.ELEVENLABS_VOICE_ID || process.env.ELEVENLABS_VOICE_ID_ENV_VAR || "pNInz6obpgDQGcFmaJgB"; // Adam - reliable built-in voice
+        // Override with guaranteed built-in voice (Rachel - most reliable premade voice)
+        const voiceId = "21m00Tcm4TlvDq8ikWAM"; // Rachel - guaranteed available on all accounts
         
         console.log("Generating speech for response:", jarvisResponse.substring(0, 100) + "...");
         console.log("Using voice ID:", voiceId);
