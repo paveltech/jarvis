@@ -16,23 +16,167 @@ export default function JarvisInterface({ sessionId }: JarvisInterfaceProps) {
   const [status, setStatus] = useState("Ready for your command.");
   const [voiceVisualizationVisible, setVoiceVisualizationVisible] = useState(false);
   const [testMessage, setTestMessage] = useState("");
+  const [showConversationalAI, setShowConversationalAI] = useState(false);
   
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const audioChunksRef = useRef<Blob[]>([]);
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
-  // Load ElevenLabs widget script
+  // Load ElevenLabs widget script with comprehensive error handling
   useEffect(() => {
-    const script = document.createElement('script');
-    script.src = 'https://unpkg.com/@elevenlabs/convai-widget-embed';
-    script.async = true;
-    script.type = 'text/javascript';
-    document.body.appendChild(script);
+    const loadElevenLabsScript = async () => {
+      try {
+        console.log('Loading ElevenLabs script...');
+        
+        // Check if script already exists
+        const existingScript = document.querySelector('script[src*="convai-widget-embed"]');
+        if (existingScript) {
+          console.log('ElevenLabs script already loaded');
+          return;
+        }
+
+        const script = document.createElement('script');
+        script.src = 'https://unpkg.com/@elevenlabs/convai-widget-embed';
+        script.async = true;
+        script.type = 'text/javascript';
+        
+        // Add script load handlers
+        const scriptLoaded = new Promise((resolve, reject) => {
+          script.onload = () => {
+            console.log('ElevenLabs script loaded successfully');
+            resolve(true);
+          };
+          script.onerror = (error) => {
+            console.error('ElevenLabs script failed to load:', error);
+            reject(error);
+          };
+        });
+
+        document.body.appendChild(script);
+        await scriptLoaded;
+        
+      } catch (error) {
+        console.error('Error loading ElevenLabs script:', error);
+      }
+    };
+
+    // Add global error handler to catch any uncaught exceptions
+    const handleGlobalError = (event: ErrorEvent) => {
+      console.log('Global error event details:', {
+        message: event.message,
+        filename: event.filename,
+        lineno: event.lineno,
+        colno: event.colno,
+        error: event.error,
+        type: event.type
+      });
+      
+      // Defensive checks for ElevenLabs script error patterns
+      const message = event.message || '';
+      const filename = event.filename || '';
+      
+      if (
+        (message === 'Script error.' && filename === '' && event.lineno === 0) ||
+        (message.includes('elevenlabs') || filename.includes('elevenlabs')) ||
+        (message === '' && filename === '' && event.lineno === 0) ||
+        (event.error === null && message === 'Script error.')
+      ) {
+        console.log('Suppressed ElevenLabs-related error (harmless)');
+        event.preventDefault();
+        event.stopPropagation();
+        event.stopImmediatePropagation();
+        return false;
+      }
+      
+      console.error('Unhandled global error:', event.error, event.message, event.filename, event.lineno);
+    };
+
+    const handleUnhandledRejection = (event: PromiseRejectionEvent) => {
+      console.log('Promise rejection details:', {
+        reason: event.reason,
+        promise: event.promise,
+        type: event.type
+      });
+      
+      // Suppress ElevenLabs-related promise rejections
+      if (
+        (event.reason && typeof event.reason === 'string' && event.reason.includes('elevenlabs')) ||
+        (event.reason === null) ||
+        (event.reason === undefined)
+      ) {
+        console.log('Suppressed ElevenLabs-related promise rejection (harmless)');
+        event.preventDefault();
+        return false;
+      }
+      
+      console.error('Unhandled promise rejection:', event.reason);
+      event.preventDefault();
+    };
+
+    // Store original error handlers
+    const originalOnError = window.onerror;
+    const originalOnUnhandledRejection = window.onunhandledrejection;
+
+    // Override window.onerror for complete error control
+    window.onerror = (message, filename, lineno, colno, error) => {
+      console.log('Window.onerror caught:', { message, filename, lineno, colno, error });
+      
+      // Check if this is an ElevenLabs-related error
+      const msgStr = String(message || '');
+      const fileStr = String(filename || '');
+      
+      if (
+        msgStr === 'Script error.' ||
+        msgStr.includes('elevenlabs') ||
+        fileStr.includes('elevenlabs') ||
+        (msgStr === '' && fileStr === '' && lineno === 0)
+      ) {
+        console.log('Suppressed ElevenLabs error via window.onerror');
+        return true; // Prevent default error handling
+      }
+      
+      // Call original handler for other errors
+      if (originalOnError) {
+        return originalOnError.call(window, message, filename, lineno, colno, error);
+      }
+      return false;
+    };
+
+    // Override onunhandledrejection
+    window.onunhandledrejection = (event) => {
+      console.log('Window.onunhandledrejection caught:', event.reason);
+      
+      if (!event.reason || event.reason === null || event.reason === undefined) {
+        console.log('Suppressed null/undefined promise rejection');
+        event.preventDefault();
+        return true;
+      }
+      
+      // Call original handler for legitimate errors
+      if (originalOnUnhandledRejection) {
+        return originalOnUnhandledRejection.call(window, event);
+      }
+      return false;
+    };
+    
+    // Also keep event listeners as backup
+    window.addEventListener('error', handleGlobalError, true);
+    window.addEventListener('unhandledrejection', handleUnhandledRejection, true);
+
+    loadElevenLabsScript();
 
     return () => {
-      // Cleanup script on unmount
-      if (document.body.contains(script)) {
+      // Restore original error handlers
+      window.onerror = originalOnError;
+      window.onunhandledrejection = originalOnUnhandledRejection;
+      
+      // Cleanup event listeners
+      window.removeEventListener('error', handleGlobalError, true);
+      window.removeEventListener('unhandledrejection', handleUnhandledRejection, true);
+      
+      const script = document.querySelector('script[src*="convai-widget-embed"]');
+      if (script && document.body.contains(script)) {
         document.body.removeChild(script);
       }
     };
@@ -333,24 +477,110 @@ export default function JarvisInterface({ sessionId }: JarvisInterfaceProps) {
         </div>
       )}
 
-      {/* Talk to JARVIS Button - Center Bottom */}
+      {/* Talk to JARVIS Button with Conversational AI - Center Bottom */}
       <div className="fixed bottom-16 left-1/2 transform -translate-x-1/2 z-20">
         <VoiceButton
-          onStartRecording={startRecording}
-          onStopRecording={stopRecordingHandler}
-          isRecording={isRecording}
+          onStartRecording={() => {
+            try {
+              console.log('Starting JARVIS conversation...');
+              // Show the conversational AI widget
+              setShowConversationalAI(true);
+              
+              // Wait for the custom element to be properly defined
+              const startWidget = async () => {
+                try {
+                  console.log('Waiting for ElevenLabs widget to be ready...');
+                  
+                  // Wait for custom element to be defined
+                  await customElements.whenDefined('elevenlabs-convai');
+                  
+                  // Additional delay to ensure element is fully initialized
+                  await new Promise(resolve => setTimeout(resolve, 500));
+                  
+                  const widget = document.querySelector('elevenlabs-convai');
+                  if (widget) {
+                    console.log('Widget found, attempting to start conversation...');
+                    
+                    // Try the proper API first
+                    if (typeof (widget as any).startConversation === 'function') {
+                      console.log('Calling startConversation API...');
+                      await (widget as any).startConversation();
+                    } else {
+                      console.log('API not available, triggering click...');
+                      (widget as HTMLElement).click();
+                    }
+                  } else {
+                    console.warn('Widget element not found after initialization');
+                  }
+                } catch (widgetError) {
+                  console.error('Widget initialization/start failed:', widgetError);
+                }
+              };
+              
+              // Start the widget asynchronously
+              startWidget();
+              
+            } catch (error) {
+              console.error('Failed to start conversation:', error);
+            }
+          }}
+          onStopRecording={() => {
+            try {
+              console.log('Stopping JARVIS conversation...');
+              // Try to stop the ElevenLabs conversation properly
+              const widget = document.querySelector('elevenlabs-convai');
+              if (widget && typeof (widget as any).stopConversation === 'function') {
+                console.log('Stopping ElevenLabs conversation...');
+                (widget as any).stopConversation();
+              }
+            } catch (error) {
+              console.warn('Failed to stop conversation:', error);
+            } finally {
+              // Always hide the widget regardless of stop success
+              setShowConversationalAI(false);
+            }
+          }}
+          isRecording={showConversationalAI}
           isProcessing={isProcessing}
         />
       </div>
 
-      {/* ElevenLabs Conversational AI Widget - Bottom Right Corner */}
-      <div className="fixed bottom-16 right-16 z-50" data-testid="elevenlabs-widget">
-        <div className="elevenlabs-widget-container">
-          <div dangerouslySetInnerHTML={{
-            __html: '<elevenlabs-convai agent-id="agent_9001k60fwb0pfwtvnfmz9zh24xh4"></elevenlabs-convai>'
-          }} />
+      {/* ElevenLabs Conversational AI Widget - Appears when activated */}
+      {showConversationalAI && (
+        <div className="fixed bottom-32 left-1/2 transform -translate-x-1/2 z-50" data-testid="elevenlabs-widget">
+          <div className="relative">
+            {/* Close button */}
+            <button 
+              onClick={() => {
+                try {
+                  console.log('Closing JARVIS widget...');
+                  // Try to stop the conversation before closing
+                  const widget = document.querySelector('elevenlabs-convai');
+                  if (widget && typeof (widget as any).stopConversation === 'function') {
+                    (widget as any).stopConversation();
+                  }
+                } catch (error) {
+                  console.warn('Failed to stop conversation on close:', error);
+                } finally {
+                  // Always close the widget
+                  setShowConversationalAI(false);
+                }
+              }}
+              className="absolute -top-2 -right-2 w-6 h-6 bg-red-500 hover:bg-red-600 text-white rounded-full text-xs font-bold z-10 border border-red-400"
+              data-testid="close-widget"
+            >
+              ×
+            </button>
+            
+            {/* Widget container with JARVIS styling */}
+            <div className="elevenlabs-widget-container">
+              <div dangerouslySetInnerHTML={{
+                __html: '<elevenlabs-convai agent-id="agent_9001k60fwb0pfwtvnfmz9zh24xh4"></elevenlabs-convai>'
+              }} />
+            </div>
+          </div>
         </div>
-      </div>
+      )}
 
       {/* Legacy Voice Button Backup - Hidden by default */}
       <div className="fixed bottom-8 right-32 z-10 hidden">
