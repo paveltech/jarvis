@@ -1,4 +1,4 @@
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useToast } from "@/hooks/use-toast";
 import VoiceButton from "./voice-button";
@@ -21,6 +21,22 @@ export default function JarvisInterface({ sessionId }: JarvisInterfaceProps) {
   const audioChunksRef = useRef<Blob[]>([]);
   const { toast } = useToast();
   const queryClient = useQueryClient();
+
+  // Load ElevenLabs widget script
+  useEffect(() => {
+    const script = document.createElement('script');
+    script.src = 'https://unpkg.com/@elevenlabs/convai-widget-embed';
+    script.async = true;
+    script.type = 'text/javascript';
+    document.body.appendChild(script);
+
+    return () => {
+      // Cleanup script on unmount
+      if (document.body.contains(script)) {
+        document.body.removeChild(script);
+      }
+    };
+  }, []);
 
   // Mutation for transcribing audio
   const transcribeMutation = useMutation({
@@ -317,8 +333,17 @@ export default function JarvisInterface({ sessionId }: JarvisInterfaceProps) {
         </div>
       )}
 
-      {/* Talk to JARVIS Button - Bottom Right Corner */}
-      <div className="fixed bottom-8 right-8 z-10">
+      {/* ElevenLabs Conversational AI Widget - Bottom Right Corner */}
+      <div className="fixed bottom-8 right-8 z-50">
+        <div className="elevenlabs-widget-container">
+          <div dangerouslySetInnerHTML={{
+            __html: '<elevenlabs-convai agent-id="agent_9001k60fwb0pfwtvnfmz9zh24xh4"></elevenlabs-convai>'
+          }} />
+        </div>
+      </div>
+
+      {/* Legacy Voice Button - Hidden by default, can be shown for testing */}
+      <div className="fixed bottom-8 right-32 z-10 hidden">
         <VoiceButton
           onStartRecording={startRecording}
           onStopRecording={stopRecordingHandler}
@@ -327,13 +352,13 @@ export default function JarvisInterface({ sessionId }: JarvisInterfaceProps) {
         />
       </div>
 
-      {/* Temporary Text Input for Testing n8n Webhook */}
-      <div className="fixed bottom-8 left-8 z-10 flex space-x-2">
+      {/* Temporary Text Input for Testing n8n Webhook - Keep for debugging */}
+      <div className="fixed bottom-8 left-8 z-10 flex space-x-2 opacity-50 hover:opacity-100 transition-opacity">
         <Input 
           value={testMessage}
           onChange={(e) => setTestMessage(e.target.value)}
-          placeholder="Type a test message..."
-          className="w-64 bg-gray-900/90 border-cyan-400/60 text-cyan-400"
+          placeholder="Debug: Test message..."
+          className="w-48 bg-gray-900/90 border-cyan-400/40 text-cyan-400 text-sm"
           onKeyPress={(e) => {
             if (e.key === 'Enter' && testMessage.trim()) {
               jarvisMutation.mutate({ message: testMessage, sessionId });
@@ -349,7 +374,7 @@ export default function JarvisInterface({ sessionId }: JarvisInterfaceProps) {
             }
           }}
           disabled={isProcessing || !testMessage.trim()}
-          className="bg-cyan-500/80 hover:bg-cyan-500 text-white border border-cyan-400"
+          className="bg-cyan-500/60 hover:bg-cyan-500 text-white border border-cyan-400/40 text-sm px-3"
         >
           Test
         </Button>
