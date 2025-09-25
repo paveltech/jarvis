@@ -17,6 +17,8 @@ export default function JarvisInterface({ sessionId }: JarvisInterfaceProps) {
   const [voiceVisualizationVisible, setVoiceVisualizationVisible] = useState(false);
   const [testMessage, setTestMessage] = useState("");
   const [showConversationalAI, setShowConversationalAI] = useState(false);
+  const [conversationMode, setConversationMode] = useState(false);
+  const [isWaitingForResponse, setIsWaitingForResponse] = useState(false);
   
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const audioChunksRef = useRef<Blob[]>([]);
@@ -24,12 +26,102 @@ export default function JarvisInterface({ sessionId }: JarvisInterfaceProps) {
   const queryClient = useQueryClient();
 
 
-  // Voice recording functionality only - ElevenLabs widget removed
+  // Load ElevenLabs conversational agent widget
   useEffect(() => {
-    console.log('JARVIS voice recording system initialized');
-    // No external scripts needed - using built-in voice recording
+    console.log('Loading ElevenLabs conversational agent...');
+    
+    const loadElevenLabsWidget = async () => {
+      try {
+        // Check if script already exists
+        const existingScript = document.querySelector('script[src*="convai-widget-embed"]');
+        if (existingScript) {
+          console.log('ElevenLabs script already loaded');
+          return;
+        }
+
+        const script = document.createElement('script');
+        script.src = 'https://unpkg.com/@elevenlabs/convai-widget-embed';
+        script.async = true;
+        script.type = 'text/javascript';
+        
+        const scriptLoaded = new Promise((resolve, reject) => {
+          script.onload = () => {
+            console.log('ElevenLabs script loaded successfully');
+            resolve(true);
+          };
+          script.onerror = (error) => {
+            console.error('ElevenLabs script failed to load:', error);
+            reject(error);
+          };
+        });
+
+        document.body.appendChild(script);
+        await scriptLoaded;
+        
+        // Set up widget event listeners after script loads with longer delay
+        setTimeout(setupWidgetEventListeners, 1000);
+        
+      } catch (error) {
+        console.error('Error loading ElevenLabs widget:', error);
+      }
+    };
+
+    const setupWidgetEventListeners = () => {
+      // Wait for the widget to be defined
+      customElements.whenDefined('elevenlabs-convai').then(() => {
+        console.log('ElevenLabs widget defined, setting up event bridge...');
+        
+        // Monitor for widget events and bridge to n8n
+        setTimeout(() => {
+          const widget = document.querySelector('elevenlabs-convai');
+          if (widget) {
+            console.log('Found ElevenLabs widget, setting up conversation bridge...');
+            
+            // Add mutation observer to capture conversation events
+            const observer = new MutationObserver((mutations) => {
+              mutations.forEach((mutation) => {
+                // Look for text changes that might indicate user input or responses
+                if (mutation.type === 'childList' || mutation.type === 'characterData') {
+                  const text = widget.textContent || '';
+                  if (text.trim() && text.length > 5) {
+                    console.log('Widget text detected:', text);
+                    // You could parse this text and relay specific parts to n8n if needed
+                  }
+                }
+              });
+            });
+            
+            observer.observe(widget, {
+              childList: true,
+              subtree: true,
+              characterData: true
+            });
+            
+            // Try to hook into widget events if available
+            ['message', 'speech', 'userInput', 'conversation'].forEach(eventType => {
+              widget.addEventListener(eventType, (event: Event) => {
+                console.log(`ElevenLabs ${eventType} event:`, event);
+                
+                // Extract user message and relay to n8n
+                const customEvent = event as CustomEvent;
+                const userMessage = customEvent.detail?.message || customEvent.detail?.text;
+                if (userMessage) {
+                  console.log('Relaying user message to n8n:', userMessage);
+                  jarvisMutation.mutate({ message: userMessage, sessionId });
+                }
+              });
+            });
+          }
+        }, 2000);
+      }).catch(error => {
+        console.error('Error setting up widget listeners:', error);
+      });
+    };
+
+    loadElevenLabsWidget();
+    
     return () => {
-      console.log('JARVIS voice recording system cleaned up');
+      console.log('ElevenLabs widget cleaned up');
     };
 
     // Add global error handler to catch any uncaught exceptions
@@ -186,22 +278,66 @@ export default function JarvisInterface({ sessionId }: JarvisInterfaceProps) {
   // Mutation for sending message to JARVIS
   const jarvisMutation = useMutation({
     mutationFn: async (request: JarvisRequest): Promise<JarvisResponse> => {
+      setIsWaitingForResponse(true);
       const response = await apiRequest('POST', '/api/jarvis', request);
       return response.json();
     },
     onSuccess: (jarvisResponse: JarvisResponse) => {
       // Invalidate conversations to trigger refetch
       queryClient.invalidateQueries({ queryKey: ['/api/conversations', sessionId] });
+      setIsWaitingForResponse(false);
       
       // Play audio response if available
       if (jarvisResponse.audioUrl) {
         setStatus("JARVIS is responding...");
         const audio = new Audio(jarvisResponse.audioUrl);
-        audio.onended = () => setStatus("Ready for your command, sir");
-        audio.onerror = () => setStatus("Ready for your command, sir");
-        audio.play().catch(() => setStatus("Ready for your command, sir"));
+        audio.onended = () => {
+          setStatus("Ready for your command, sir");
+          // If in conversation mode, automatically start listening for next input
+          if (conversationMode) {
+            setTimeout(() => {
+              if (conversationMode && !isRecording) {
+                console.log('Auto-starting next voice input in conversation mode');
+                startRecording();
+              }
+            }, 1000); // Small delay to let user process the response
+          }
+        };
+        audio.onerror = () => {
+          setStatus("Ready for your command, sir");
+          // If in conversation mode, automatically start listening for next input
+          if (conversationMode) {
+            setTimeout(() => {
+              if (conversationMode && !isRecording) {
+                console.log('Auto-starting next voice input in conversation mode (audio error)');
+                startRecording();
+              }
+            }, 1000);
+          }
+        };
+        audio.play().catch(() => {
+          setStatus("Ready for your command, sir");
+          // If in conversation mode, automatically start listening for next input
+          if (conversationMode) {
+            setTimeout(() => {
+              if (conversationMode && !isRecording) {
+                console.log('Auto-starting next voice input in conversation mode (audio play error)');
+                startRecording();
+              }
+            }, 1000);
+          }
+        });
       } else {
         setStatus("Ready for your command, sir");
+        // If in conversation mode, automatically start listening for next input
+        if (conversationMode) {
+          setTimeout(() => {
+            if (conversationMode && !isRecording) {
+              console.log('Auto-starting next voice input in conversation mode (no audio)');
+              startRecording();
+            }
+          }, 1000);
+        }
       }
     },
   });
@@ -461,14 +597,34 @@ export default function JarvisInterface({ sessionId }: JarvisInterfaceProps) {
         </div>
       )}
 
-      {/* Talk to JARVIS Button with Voice Recording - Center Bottom */}
+      {/* ElevenLabs Conversational Agent Widget - Center Bottom */}
       <div className="fixed bottom-16 left-1/2 transform -translate-x-1/2 z-20">
-        <VoiceButton
-          onStartRecording={startRecording}
-          onStopRecording={stopRecordingHandler}
-          isRecording={isRecording}
-          isProcessing={isProcessing}
-        />
+        <div className="elevenlabs-widget-container bg-gray-900/90 backdrop-blur-sm border-2 border-cyan-400/60 rounded-2xl p-4">
+          <div className="relative">
+            <div dangerouslySetInnerHTML={{
+              __html: `<elevenlabs-convai agent-id="agent_9001k60fwb0pfwtvnfmz9zh24xh4"></elevenlabs-convai>`
+            }} />
+            
+            {/* Manual Bridge Button for Testing */}
+            <button
+              onClick={() => {
+                const testMessage = prompt('Enter message to send to JARVIS:');
+                if (testMessage) {
+                  console.log('Manual bridge: sending message to n8n:', testMessage);
+                  jarvisMutation.mutate({ message: testMessage, sessionId });
+                  toast({
+                    title: "Message sent to JARVIS",
+                    description: `Sent: "${testMessage.substring(0, 50)}..."`
+                  });
+                }
+              }}
+              className="absolute -top-2 -right-2 w-6 h-6 bg-blue-500 hover:bg-blue-600 text-white rounded-full text-xs font-bold border border-blue-400"
+              title="Test n8n Bridge"
+            >
+              →
+            </button>
+          </div>
+        </div>
       </div>
 
 

@@ -7,13 +7,17 @@ interface VoiceButtonProps {
   onStopRecording: () => void;
   isRecording: boolean;
   isProcessing: boolean;
+  conversationMode?: boolean;
+  isWaitingForResponse?: boolean;
 }
 
 export default function VoiceButton({ 
   onStartRecording, 
   onStopRecording, 
   isRecording, 
-  isProcessing 
+  isProcessing,
+  conversationMode = false,
+  isWaitingForResponse = false
 }: VoiceButtonProps) {
   
   const handleClick = () => {
@@ -61,16 +65,37 @@ export default function VoiceButton({
           data-testid="voice-button"
         >
           <div className="flex items-center space-x-2">
-            {isRecording ? (
-              <>
-                <Square className="w-4 h-4" />
-                <span>Stop Recording</span>
-              </>
+            {conversationMode ? (
+              // In conversation mode
+              isRecording ? (
+                <>
+                  <Square className="w-4 h-4" />
+                  <span>Stop Speaking</span>
+                </>
+              ) : isWaitingForResponse ? (
+                <>
+                  <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                  <span>JARVIS Thinking...</span>
+                </>
+              ) : (
+                <>
+                  <Square className="w-4 h-4" />
+                  <span>End Conversation</span>
+                </>
+              )
             ) : (
-              <>
-                <Mic className="w-4 h-4" />
-                <span>Talk to Jarvis</span>
-              </>
+              // Single interaction mode
+              isRecording ? (
+                <>
+                  <Square className="w-4 h-4" />
+                  <span>Stop Recording</span>
+                </>
+              ) : (
+                <>
+                  <Mic className="w-4 h-4" />
+                  <span>Start Conversation</span>
+                </>
+              )
             )}
           </div>
         </Button>
