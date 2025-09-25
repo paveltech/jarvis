@@ -4,6 +4,8 @@ import { useToast } from "@/hooks/use-toast";
 import VoiceButton from "./voice-button";
 import { apiRequest } from "@/lib/queryClient";
 import type { JarvisRequest, JarvisResponse } from "@shared/schema";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 
 interface JarvisInterfaceProps {
   sessionId: string;
@@ -13,6 +15,7 @@ export default function JarvisInterface({ sessionId }: JarvisInterfaceProps) {
   const [isRecording, setIsRecording] = useState(false);
   const [status, setStatus] = useState("Ready for your command.");
   const [voiceVisualizationVisible, setVoiceVisualizationVisible] = useState(false);
+  const [testMessage, setTestMessage] = useState("");
   
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const audioChunksRef = useRef<Blob[]>([]);
@@ -23,8 +26,18 @@ export default function JarvisInterface({ sessionId }: JarvisInterfaceProps) {
   const transcribeMutation = useMutation({
     mutationFn: async (audioBlob: Blob): Promise<{ text: string; duration: number }> => {
       const formData = new FormData();
-      // Use correct file extension based on audio type
-      const fileExtension = audioBlob.type.includes('webm') ? 'webm' : 'wav';
+      // Map MIME types to correct file extensions
+      let fileExtension = 'webm'; // default
+      if (audioBlob.type.includes('wav')) {
+        fileExtension = 'wav';
+      } else if (audioBlob.type.includes('mp4') || audioBlob.type.includes('m4a')) {
+        fileExtension = 'mp4';
+      } else if (audioBlob.type.includes('webm')) {
+        fileExtension = 'webm';
+      } else if (audioBlob.type.includes('ogg')) {
+        fileExtension = 'ogg';
+      }
+      console.log('Audio blob type:', audioBlob.type, 'Using extension:', fileExtension);
       formData.append('audio', audioBlob, `recording.${fileExtension}`);
       
       const response = await fetch('/api/transcribe', {
@@ -62,16 +75,23 @@ export default function JarvisInterface({ sessionId }: JarvisInterfaceProps) {
         } 
       });
       
-      // Use audio/webm;codecs=opus which is supported by OpenAI Whisper
-      const options = { mimeType: 'audio/webm;codecs=opus' };
+      // Try different audio formats that OpenAI Whisper supports, prioritize webm with opus
       let mediaRecorder;
       
-      if (MediaRecorder.isTypeSupported(options.mimeType)) {
-        mediaRecorder = new MediaRecorder(stream, options);
+      if (MediaRecorder.isTypeSupported('audio/webm;codecs=opus')) {
+        mediaRecorder = new MediaRecorder(stream, { mimeType: 'audio/webm;codecs=opus' });
+      } else if (MediaRecorder.isTypeSupported('audio/webm')) {
+        mediaRecorder = new MediaRecorder(stream, { mimeType: 'audio/webm' });
+      } else if (MediaRecorder.isTypeSupported('audio/mp4')) {
+        mediaRecorder = new MediaRecorder(stream, { mimeType: 'audio/mp4' });
+      } else if (MediaRecorder.isTypeSupported('audio/wav')) {
+        mediaRecorder = new MediaRecorder(stream, { mimeType: 'audio/wav' });
       } else {
-        // Fallback to default if webm is not supported
+        // Use default format
         mediaRecorder = new MediaRecorder(stream);
       }
+      
+      console.log('MediaRecorder using format:', mediaRecorder.mimeType);
       
       mediaRecorderRef.current = mediaRecorder;
       audioChunksRef.current = [];
@@ -83,7 +103,9 @@ export default function JarvisInterface({ sessionId }: JarvisInterfaceProps) {
       mediaRecorder.onstop = async () => {
         // Use the actual MIME type from the recorder
         const mimeType = mediaRecorder.mimeType || 'audio/webm';
+        console.log('Recording format:', mimeType, 'Blob type:', audioChunksRef.current[0]?.type);
         const audioBlob = new Blob(audioChunksRef.current, { type: mimeType });
+        console.log('Final blob type:', audioBlob.type, 'Size:', audioBlob.size);
         await processAudioInput(audioBlob);
         
         // Stop all tracks to free up microphone
@@ -292,6 +314,34 @@ export default function JarvisInterface({ sessionId }: JarvisInterfaceProps) {
           isRecording={isRecording}
           isProcessing={isProcessing}
         />
+      </div>
+
+      {/* Temporary Text Input for Testing n8n Webhook */}
+      <div className="fixed bottom-8 left-8 z-10 flex space-x-2">
+        <Input 
+          value={testMessage}
+          onChange={(e) => setTestMessage(e.target.value)}
+          placeholder="Type a test message..."
+          className="w-64 bg-gray-900/90 border-cyan-400/60 text-cyan-400"
+          onKeyPress={(e) => {
+            if (e.key === 'Enter' && testMessage.trim()) {
+              jarvisMutation.mutate({ message: testMessage, sessionId });
+              setTestMessage("");
+            }
+          }}
+        />
+        <Button 
+          onClick={() => {
+            if (testMessage.trim()) {
+              jarvisMutation.mutate({ message: testMessage, sessionId });
+              setTestMessage("");
+            }
+          }}
+          disabled={isProcessing || !testMessage.trim()}
+          className="bg-cyan-500/80 hover:bg-cyan-500 text-white border border-cyan-400"
+        >
+          Test
+        </Button>
       </div>
 
 
