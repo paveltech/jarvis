@@ -23,6 +23,90 @@ export default function JarvisInterface({ sessionId }: JarvisInterfaceProps) {
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
+  // Function to set up ElevenLabs widget event listeners for n8n bridge
+  const setupElevenLabsEventListeners = () => {
+    console.log('Setting up ElevenLabs event listeners...');
+    
+    // Wait for custom element to be defined
+    customElements.whenDefined('elevenlabs-convai').then(() => {
+      console.log('ElevenLabs custom element defined, setting up listeners...');
+      
+      // Listen for widget messages and relay to n8n
+      const setupWidgetBridge = () => {
+        const widget = document.querySelector('elevenlabs-convai');
+        if (!widget) return;
+
+        // Listen for speech/message events from ElevenLabs widget
+        const observer = new MutationObserver(() => {
+          // Check if widget has new content/messages
+          const widgetContent = widget.textContent || '';
+          if (widgetContent && widgetContent.trim() !== '') {
+            console.log('ElevenLabs widget content detected:', widgetContent);
+          }
+        });
+
+        observer.observe(widget, {
+          childList: true,
+          subtree: true,
+          characterData: true
+        });
+
+        // Try to intercept widget's API calls or events
+        if ((widget as any).addEventListener) {
+          ['message', 'speech', 'response', 'conversation', 'userInput', 'transcription'].forEach(eventType => {
+            (widget as any).addEventListener(eventType, (event: any) => {
+              console.log(`ElevenLabs ${eventType} event:`, event);
+              
+              // Extract message content and relay to n8n
+              const message = event.detail?.message || event.detail?.text || event.message || event.text;
+              if (message) {
+                console.log('Relaying message to n8n:', message);
+                jarvisMutation.mutate({ message, sessionId });
+              }
+            });
+          });
+        }
+
+        // Also try to hook into the widget's internal functions
+        if ((widget as any).onMessage) {
+          const originalOnMessage = (widget as any).onMessage;
+          (widget as any).onMessage = function(message: string) {
+            console.log('Intercepted ElevenLabs message:', message);
+            jarvisMutation.mutate({ message, sessionId });
+            return originalOnMessage.call(this, message);
+          };
+        }
+
+        // Monitor DOM changes more aggressively for transcription text
+        const transcriptObserver = new MutationObserver((mutations) => {
+          mutations.forEach((mutation) => {
+            if (mutation.type === 'childList') {
+              mutation.addedNodes.forEach((node) => {
+                if (node.nodeType === Node.TEXT_NODE && node.textContent?.trim()) {
+                  const text = node.textContent.trim();
+                  if (text.length > 5) { // Only relay meaningful text
+                    console.log('User speech detected:', text);
+                    jarvisMutation.mutate({ message: text, sessionId });
+                  }
+                }
+              });
+            }
+          });
+        });
+
+        transcriptObserver.observe(widget, {
+          childList: true,
+          subtree: true
+        });
+      };
+
+      // Set up the bridge with a delay to ensure widget is fully initialized
+      setTimeout(setupWidgetBridge, 2000);
+    }).catch(error => {
+      console.error('Error setting up ElevenLabs listeners:', error);
+    });
+  };
+
   // Load ElevenLabs widget script with comprehensive error handling
   useEffect(() => {
     const loadElevenLabsScript = async () => {
@@ -55,6 +139,9 @@ export default function JarvisInterface({ sessionId }: JarvisInterfaceProps) {
 
         document.body.appendChild(script);
         await scriptLoaded;
+        
+        // Set up ElevenLabs widget event listeners after script loads
+        setupElevenLabsEventListeners();
         
       } catch (error) {
         console.error('Error loading ElevenLabs script:', error);
@@ -633,6 +720,58 @@ export default function JarvisInterface({ sessionId }: JarvisInterfaceProps) {
               data-testid="close-widget"
             >
               ×
+            </button>
+
+            {/* Manual Bridge Button */}
+            <button
+              onClick={async () => {
+                try {
+                  const widget = document.querySelector('elevenlabs-convai');
+                  if (widget) {
+                    // Look for any text content in the widget that might be user input
+                    const widgetText = widget.textContent || '';
+                    const shadowRoot = (widget as any).shadowRoot;
+                    
+                    let userMessage = '';
+                    
+                    // Try to find transcribed text in shadow DOM
+                    if (shadowRoot) {
+                      const textElements = shadowRoot.querySelectorAll('*');
+                      textElements.forEach((el: Element) => {
+                        const text = el.textContent?.trim() || '';
+                        if (text && text.length > 5 && !text.includes('listening') && !text.includes('Processing')) {
+                          userMessage = text;
+                        }
+                      });
+                    }
+                    
+                    // Fallback to prompt user for message
+                    if (!userMessage) {
+                      userMessage = prompt('Enter your message to send to JARVIS:') || '';
+                    }
+                    
+                    if (userMessage) {
+                      console.log('Manually sending message to n8n:', userMessage);
+                      jarvisMutation.mutate({ message: userMessage, sessionId });
+                      toast({
+                        title: "Message sent to JARVIS",
+                        description: `Sent: "${userMessage.substring(0, 50)}..."`
+                      });
+                    }
+                  }
+                } catch (error) {
+                  console.error('Error sending message:', error);
+                  toast({
+                    title: "Error",
+                    description: "Failed to send message to JARVIS"
+                  });
+                }
+              }}
+              className="absolute -top-2 -left-2 w-6 h-6 bg-blue-500 hover:bg-blue-600 text-white rounded-full text-xs font-bold z-10 border border-blue-400"
+              data-testid="send-to-n8n"
+              title="Send to n8n"
+            >
+              →
             </button>
             
             {/* Widget container with JARVIS styling */}
