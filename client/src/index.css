@@ -175,6 +175,31 @@
     background-size: 20px 20px;
     opacity: 0.3;
   }
+
+  /* Intense glow effects for advanced JARVIS */
+  .intense-glow {
+    box-shadow: 
+      0 0 20px #00ffff,
+      0 0 40px #00ffff,
+      0 0 60px #00ffff,
+      inset 0 0 20px #00ffff;
+  }
+
+  .intense-core-glow {
+    box-shadow: 
+      0 0 30px #00ffff,
+      0 0 60px #00ffff,
+      0 0 90px #00ffff,
+      0 0 120px #00ffff,
+      inset 0 0 30px #00ffff;
+  }
+
+  .core-inner-glow {
+    box-shadow: 
+      0 0 15px #00ffff,
+      0 0 30px #00ffff,
+      inset 0 0 15px #00ffff;
+  }
 }
 
 @keyframes pulse-slow {
@@ -210,6 +235,13 @@
   0% { transform: rotate(0deg); opacity: 0; }
   50% { opacity: 1; }
   100% { transform: rotate(360deg); opacity: 0; }
+}
+
+@keyframes scan-beam {
+  0% { transform: translateX(-50%) rotate(0deg); opacity: 0; }
+  25% { opacity: 0.8; }
+  75% { opacity: 0.8; }
+  100% { transform: translateX(-50%) rotate(360deg); opacity: 0; }
 }
 
 .animate-glow {

@@ -132,81 +132,150 @@ export default function JarvisInterface({ sessionId }: JarvisInterfaceProps) {
   return (
     <div className="flex-1 flex flex-col items-center justify-center relative" data-testid="jarvis-main-content">
       
-      {/* Central JARVIS Hub - Inspired by Iron Man */}
-      <div className="relative flex items-center justify-center mb-24" data-testid="jarvis-hub">
+      {/* Advanced JARVIS Hub - High-tech Iron Man Style */}
+      <div className="relative flex items-center justify-center" data-testid="jarvis-hub">
         
-        {/* Outermost Ring - Slow rotation */}
-        <div className="absolute w-96 h-96 border border-primary/20 rounded-full animate-spin-slow">
-          {/* Outer ring details */}
-          <div className="absolute top-0 left-1/2 w-8 h-1 bg-primary/60 transform -translate-x-1/2" />
-          <div className="absolute bottom-0 left-1/2 w-8 h-1 bg-primary/60 transform -translate-x-1/2" />
-          <div className="absolute left-0 top-1/2 w-1 h-8 bg-primary/60 transform -translate-y-1/2" />
-          <div className="absolute right-0 top-1/2 w-1 h-8 bg-primary/60 transform -translate-y-1/2" />
-        </div>
-
-        {/* Middle Ring */}
-        <div className="absolute w-80 h-80 border border-primary/40 rounded-full animate-pulse-slow">
-          {/* Technical markings */}
-          {Array.from({ length: 24 }, (_, i) => (
+        {/* Outer Technical Ring - 600px */}
+        <div className="absolute w-[600px] h-[600px] border border-cyan-400/40 rounded-full animate-spin-slow">
+          {/* Outer ring segments */}
+          {Array.from({ length: 60 }, (_, i) => (
             <div
-              key={i}
-              className="absolute w-1 h-2 bg-primary/30"
+              key={`outer-${i}`}
+              className={`absolute w-2 h-1 ${i % 5 === 0 ? 'bg-cyan-400' : 'bg-cyan-400/40'}`}
               style={{
                 top: '2px',
                 left: '50%',
-                transformOrigin: '50% 160px',
+                transformOrigin: '50% 300px',
+                transform: `translateX(-50%) rotate(${i * 6}deg)`,
+              }}
+            />
+          ))}
+          {/* Binary data segments */}
+          {Array.from({ length: 8 }, (_, i) => (
+            <div
+              key={`binary-${i}`}
+              className="absolute text-cyan-400/60 text-xs font-mono"
+              style={{
+                top: '15px',
+                left: '50%',
+                transformOrigin: '50% 285px',
+                transform: `translateX(-50%) rotate(${i * 45}deg)`,
+              }}
+            >
+              {Math.random() > 0.5 ? '1010110' : '0101101'}
+            </div>
+          ))}
+        </div>
+
+        {/* Middle Technical Ring - 480px */}
+        <div className="absolute w-[480px] h-[480px] border-2 border-cyan-400/60 rounded-full">
+          {/* Segmented data ring */}
+          {Array.from({ length: 40 }, (_, i) => (
+            <div
+              key={`middle-${i}`}
+              className={`absolute w-1 h-4 ${i % 3 === 0 ? 'bg-cyan-400' : 'bg-cyan-400/50'}`}
+              style={{
+                top: '0px',
+                left: '50%',
+                transformOrigin: '50% 240px',
+                transform: `translateX(-50%) rotate(${i * 9}deg)`,
+              }}
+            />
+          ))}
+          {/* Technical readouts */}
+          <div className="absolute top-0 left-1/2 transform -translate-x-1/2 -translate-y-8 text-cyan-400/80 text-xs font-mono">
+            SYSTEM ONLINE
+          </div>
+          <div className="absolute bottom-0 left-1/2 transform -translate-x-1/2 translate-y-8 text-cyan-400/80 text-xs font-mono">
+            AI.READY
+          </div>
+        </div>
+
+        {/* Inner Data Ring - 360px */}
+        <div className="absolute w-[360px] h-[360px] border-2 border-cyan-400/80 rounded-full animate-pulse-slow">
+          {/* Measurement scales */}
+          {Array.from({ length: 72 }, (_, i) => (
+            <div
+              key={`inner-${i}`}
+              className={`absolute ${i % 6 === 0 ? 'w-0.5 h-6 bg-cyan-400' : 'w-px h-3 bg-cyan-400/60'}`}
+              style={{
+                top: '0px',
+                left: '50%',
+                transformOrigin: '50% 180px',
+                transform: `translateX(-50%) rotate(${i * 5}deg)`,
+              }}
+            />
+          ))}
+          {/* Binary ring */}
+          <div className="absolute inset-4 border border-cyan-400/40 rounded-full flex items-center justify-center">
+            <div className="text-cyan-400/60 text-xs font-mono absolute top-2 left-1/2 transform -translate-x-1/2">
+              001100100111001
+            </div>
+          </div>
+        </div>
+
+        {/* Core Ring - 240px */}
+        <div className="absolute w-[240px] h-[240px] border-4 border-cyan-400 rounded-full intense-glow animate-glow">
+          {/* Core segments */}
+          {Array.from({ length: 24 }, (_, i) => (
+            <div
+              key={`core-${i}`}
+              className="absolute w-1 h-8 bg-cyan-400"
+              style={{
+                top: '0px',
+                left: '50%',
+                transformOrigin: '50% 120px',
                 transform: `translateX(-50%) rotate(${i * 15}deg)`,
               }}
             />
           ))}
         </div>
 
-        {/* Inner Ring */}
-        <div className="absolute w-64 h-64 border-2 border-primary/60 rounded-full animate-glow">
-          {/* Inner ring segments */}
-          {Array.from({ length: 8 }, (_, i) => (
-            <div
-              key={i}
-              className="absolute w-16 h-1 bg-primary/50"
-              style={{
-                top: '50%',
-                left: '50%',
-                transformOrigin: '0 0',
-                transform: `translate(-50%, -50%) rotate(${i * 45}deg) translateX(120px)`,
-              }}
-            />
-          ))}
-        </div>
-
-        {/* Central Core */}
-        <div className="relative w-48 h-48 bg-gradient-radial from-primary/30 via-primary/10 to-transparent rounded-full border-2 border-primary flex items-center justify-center animate-pulse">
-          <div className="w-32 h-32 bg-gradient-radial from-primary/40 via-primary/20 to-transparent rounded-full border border-primary/80 flex items-center justify-center">
-            <div className="w-20 h-20 bg-gradient-radial from-primary/60 to-primary/20 rounded-full border-2 border-primary animate-glow flex items-center justify-center">
-              <span className="text-primary font-bold text-xl tracking-widest drop-shadow-lg">J.A.R.V.I.S</span>
-            </div>
+        {/* Central Core - Intense Glow */}
+        <div className="relative w-32 h-32 bg-gradient-radial from-cyan-400 via-cyan-500/80 to-transparent rounded-full border-4 border-cyan-400 intense-core-glow animate-pulse flex items-center justify-center">
+          <div className="w-20 h-20 bg-gradient-radial from-cyan-300/90 to-cyan-400/60 rounded-full border-2 border-cyan-300 flex items-center justify-center core-inner-glow">
+            <span className="text-cyan-100 font-bold text-lg tracking-widest drop-shadow-[0_0_10px_#00ffff]">J.A.R.V.I.S</span>
           </div>
         </div>
 
-        {/* HUD Corner Elements */}
-        <div className="absolute -top-4 -left-4 w-8 h-8 border-t-2 border-l-2 border-primary/60" />
-        <div className="absolute -top-4 -right-4 w-8 h-8 border-t-2 border-r-2 border-primary/60" />
-        <div className="absolute -bottom-4 -left-4 w-8 h-8 border-b-2 border-l-2 border-primary/60" />
-        <div className="absolute -bottom-4 -right-4 w-8 h-8 border-b-2 border-r-2 border-primary/60" />
+        {/* Horizontal Technical Displays */}
+        <div className="absolute left-[-200px] top-1/2 transform -translate-y-1/2">
+          <div className="bg-cyan-400/10 border border-cyan-400/40 px-4 py-2 backdrop-blur-sm">
+            <div className="text-cyan-400 text-xs font-mono">NEURAL.NET</div>
+            <div className="text-cyan-400/60 text-xs font-mono">█████████░ 94%</div>
+          </div>
+        </div>
+        
+        <div className="absolute right-[-200px] top-1/2 transform -translate-y-1/2">
+          <div className="bg-cyan-400/10 border border-cyan-400/40 px-4 py-2 backdrop-blur-sm">
+            <div className="text-cyan-400 text-xs font-mono">PROCESSING</div>
+            <div className="text-cyan-400/60 text-xs font-mono">████████░░ 87%</div>
+          </div>
+        </div>
+
+        {/* Scanner Beam */}
+        <div className="absolute w-[360px] h-[360px] rounded-full overflow-hidden">
+          <div className="jarvis-scanner w-0.5 h-full bg-gradient-to-t from-transparent via-cyan-400 to-transparent absolute left-1/2 transform -translate-x-1/2 animate-scan-beam"></div>
+        </div>
+
+        {/* Corner HUD Elements */}
+        <div className="absolute -top-8 -left-8 w-16 h-16 border-t-2 border-l-2 border-cyan-400/60">
+          <div className="absolute top-1 left-1 w-2 h-2 bg-cyan-400"></div>
+        </div>
+        <div className="absolute -top-8 -right-8 w-16 h-16 border-t-2 border-r-2 border-cyan-400/60">
+          <div className="absolute top-1 right-1 w-2 h-2 bg-cyan-400"></div>
+        </div>
+        <div className="absolute -bottom-8 -left-8 w-16 h-16 border-b-2 border-l-2 border-cyan-400/60">
+          <div className="absolute bottom-1 left-1 w-2 h-2 bg-cyan-400"></div>
+        </div>
+        <div className="absolute -bottom-8 -right-8 w-16 h-16 border-b-2 border-r-2 border-cyan-400/60">
+          <div className="absolute bottom-1 right-1 w-2 h-2 bg-cyan-400"></div>
+        </div>
       </div>
 
-      {/* Talk to JARVIS Button */}
-      <div className="relative z-10">
-        <VoiceButton
-          onStartRecording={startRecording}
-          onStopRecording={stopRecordingHandler}
-          isRecording={isRecording}
-          isProcessing={isProcessing}
-        />
-      </div>
-
-      {/* Voice Visualization */}
+      {/* Voice Visualization - Positioned near center */}
       {voiceVisualizationVisible && (
-        <div className="flex items-center justify-center space-x-1 mt-8" data-testid="voice-visualization">
+        <div className="absolute bottom-32 left-1/2 transform -translate-x-1/2 flex items-center justify-center space-x-1" data-testid="voice-visualization">
           <div className="voice-wave" />
           <div className="voice-wave" />
           <div className="voice-wave" />
@@ -215,19 +284,30 @@ export default function JarvisInterface({ sessionId }: JarvisInterfaceProps) {
         </div>
       )}
 
-      {/* Status Text - Minimal and clean */}
-      <div className="absolute bottom-16 left-1/2 transform -translate-x-1/2">
-        <p className="text-primary/80 text-sm font-medium tracking-wide" data-testid="status-text">
+      {/* Talk to JARVIS Button - Bottom Right Corner */}
+      <div className="fixed bottom-8 right-8 z-10">
+        <VoiceButton
+          onStartRecording={startRecording}
+          onStopRecording={stopRecordingHandler}
+          isRecording={isRecording}
+          isProcessing={isProcessing}
+        />
+      </div>
+
+      {/* Status Text - Bottom Center */}
+      <div className="fixed bottom-8 left-1/2 transform -translate-x-1/2">
+        <p className="text-cyan-400/80 text-sm font-medium tracking-wide font-mono" data-testid="status-text">
           {status}
         </p>
       </div>
 
       {/* Processing Overlay */}
       {isProcessing && (
-        <div className="fixed inset-0 bg-background/90 backdrop-blur-sm flex items-center justify-center z-50" data-testid="processing-overlay">
+        <div className="fixed inset-0 bg-background/95 backdrop-blur-sm flex items-center justify-center z-50" data-testid="processing-overlay">
           <div className="text-center">
-            <div className="w-20 h-20 border-4 border-primary/30 border-t-primary rounded-full animate-spin mb-6" />
-            <p className="text-primary font-medium text-lg tracking-wide">Processing your request...</p>
+            <div className="w-24 h-24 border-4 border-cyan-400/30 border-t-cyan-400 rounded-full animate-spin mb-6 intense-glow" />
+            <p className="text-cyan-400 font-medium text-lg tracking-wide font-mono">PROCESSING REQUEST...</p>
+            <div className="text-cyan-400/60 text-xs font-mono mt-2">█████████░ ANALYZING</div>
           </div>
         </div>
       )}
