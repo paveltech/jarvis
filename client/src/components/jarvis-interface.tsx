@@ -26,6 +26,79 @@ export default function JarvisInterface({ sessionId }: JarvisInterfaceProps) {
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
+  // Convert audio blob to WAV format for better OpenAI compatibility
+  const convertToWav = async (audioBlob: Blob): Promise<Blob> => {
+    return new Promise((resolve, reject) => {
+      const audioContext = new (window.AudioContext || (window as any).webkitAudioContext)();
+      const fileReader = new FileReader();
+      
+      fileReader.onload = async (e) => {
+        try {
+          const arrayBuffer = e.target?.result as ArrayBuffer;
+          const audioBuffer = await audioContext.decodeAudioData(arrayBuffer);
+          
+          // Convert to WAV
+          const wavBuffer = audioBufferToWav(audioBuffer);
+          const wavBlob = new Blob([wavBuffer], { type: 'audio/wav' });
+          
+          resolve(wavBlob);
+        } catch (error) {
+          reject(error);
+        }
+      };
+      
+      fileReader.onerror = () => reject(new Error('Failed to read audio file'));
+      fileReader.readAsArrayBuffer(audioBlob);
+    });
+  };
+
+  // Convert AudioBuffer to WAV format
+  const audioBufferToWav = (buffer: AudioBuffer): ArrayBuffer => {
+    const length = buffer.length;
+    const numberOfChannels = buffer.numberOfChannels;
+    const sampleRate = buffer.sampleRate;
+    const bytesPerSample = 2;
+    const blockAlign = numberOfChannels * bytesPerSample;
+    const byteRate = sampleRate * blockAlign;
+    const dataSize = length * blockAlign;
+    const bufferSize = 44 + dataSize;
+    
+    const arrayBuffer = new ArrayBuffer(bufferSize);
+    const view = new DataView(arrayBuffer);
+    
+    // WAV header
+    const writeString = (offset: number, string: string) => {
+      for (let i = 0; i < string.length; i++) {
+        view.setUint8(offset + i, string.charCodeAt(i));
+      }
+    };
+    
+    writeString(0, 'RIFF');
+    view.setUint32(4, bufferSize - 8, true);
+    writeString(8, 'WAVE');
+    writeString(12, 'fmt ');
+    view.setUint32(16, 16, true);
+    view.setUint16(20, 1, true);
+    view.setUint16(22, numberOfChannels, true);
+    view.setUint32(24, sampleRate, true);
+    view.setUint32(28, byteRate, true);
+    view.setUint16(32, blockAlign, true);
+    view.setUint16(34, bytesPerSample * 8, true);
+    writeString(36, 'data');
+    view.setUint32(40, dataSize, true);
+    
+    // Convert audio data
+    let offset = 44;
+    for (let i = 0; i < length; i++) {
+      for (let channel = 0; channel < numberOfChannels; channel++) {
+        const sample = Math.max(-1, Math.min(1, buffer.getChannelData(channel)[i]));
+        view.setInt16(offset, sample * 0x7FFF, true);
+        offset += 2;
+      }
+    }
+    
+    return arrayBuffer;
+  };
 
   // Load ElevenLabs conversational agent widget
   useEffect(() => {
@@ -353,19 +426,22 @@ export default function JarvisInterface({ sessionId }: JarvisInterfaceProps) {
         } 
       });
       
-      // Try different audio formats that OpenAI Whisper supports, prioritize webm with opus
+      // Try different audio formats that OpenAI Whisper supports - prioritize MP4 and WAV
       let mediaRecorder;
       
-      if (MediaRecorder.isTypeSupported('audio/webm;codecs=opus')) {
-        mediaRecorder = new MediaRecorder(stream, { mimeType: 'audio/webm;codecs=opus' });
-      } else if (MediaRecorder.isTypeSupported('audio/webm')) {
-        mediaRecorder = new MediaRecorder(stream, { mimeType: 'audio/webm' });
-      } else if (MediaRecorder.isTypeSupported('audio/mp4')) {
+      if (MediaRecorder.isTypeSupported('audio/mp4')) {
         mediaRecorder = new MediaRecorder(stream, { mimeType: 'audio/mp4' });
       } else if (MediaRecorder.isTypeSupported('audio/wav')) {
         mediaRecorder = new MediaRecorder(stream, { mimeType: 'audio/wav' });
+      } else if (MediaRecorder.isTypeSupported('audio/ogg;codecs=opus')) {
+        mediaRecorder = new MediaRecorder(stream, { mimeType: 'audio/ogg;codecs=opus' });
+      } else if (MediaRecorder.isTypeSupported('audio/ogg')) {
+        mediaRecorder = new MediaRecorder(stream, { mimeType: 'audio/ogg' });
+      } else if (MediaRecorder.isTypeSupported('audio/webm')) {
+        mediaRecorder = new MediaRecorder(stream, { mimeType: 'audio/webm' });
       } else {
-        // Use default format
+        // Use default format and convert to WAV via Web Audio API
+        console.log('No preferred formats supported, using default format');
         mediaRecorder = new MediaRecorder(stream);
       }
       
@@ -384,7 +460,21 @@ export default function JarvisInterface({ sessionId }: JarvisInterfaceProps) {
         console.log('Recording format:', mimeType, 'Blob type:', audioChunksRef.current[0]?.type);
         const audioBlob = new Blob(audioChunksRef.current, { type: mimeType });
         console.log('Final blob type:', audioBlob.type, 'Size:', audioBlob.size);
-        await processAudioInput(audioBlob);
+        
+        // Convert problematic formats to WAV for better OpenAI compatibility
+        let finalAudioBlob = audioBlob;
+        if (audioBlob.type.includes('opus') || audioBlob.type.includes('webm')) {
+          console.log('Converting audio to WAV for better OpenAI compatibility...');
+          try {
+            finalAudioBlob = await convertToWav(audioBlob);
+            console.log('Converted to WAV, new size:', finalAudioBlob.size);
+          } catch (error) {
+            console.warn('WAV conversion failed, using original format:', error);
+            finalAudioBlob = audioBlob;
+          }
+        }
+        
+        await processAudioInput(finalAudioBlob);
         
         // Stop all tracks to free up microphone
         stream.getTracks().forEach(track => track.stop());

@@ -43,7 +43,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ error: "No audio file provided" });
       }
 
+      // Get the original filename and extension for better OpenAI compatibility
+      const originalFilename = req.file.originalname || 'audio.wav';
+      const fileExtension = originalFilename.split('.').pop() || 'wav';
+      
+      // Create a properly named file for OpenAI
+      const properFilename = `audio_${Date.now()}.${fileExtension}`;
       const audioReadStream = fs.createReadStream(req.file.path);
+      
+      console.log(`Processing audio file: ${originalFilename} -> ${properFilename}`);
+      console.log(`File size: ${req.file.size} bytes, MIME type: ${req.file.mimetype}`);
 
       // the newest OpenAI model is "gpt-5" which was released August 7, 2025. do not change this unless explicitly requested by the user
       const transcription = await openai.audio.transcriptions.create({
