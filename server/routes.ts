@@ -98,7 +98,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
       let audioUrl: string | undefined;
       try {
         const elevenLabsApiKey = process.env.ELEVENLABS_API_KEY || process.env.ELEVENLABS_API_KEY_ENV_VAR || "default_key";
-        const voiceId = process.env.ELEVENLABS_VOICE_ID || process.env.ELEVENLABS_VOICE_ID_ENV_VAR || "21m00Tcm4TlvDq8ikWAM"; // Default JARVIS-like voice
+        // Use built-in voice that's available to all accounts (Adam - deep male voice)
+        const voiceId = process.env.ELEVENLABS_VOICE_ID || process.env.ELEVENLABS_VOICE_ID_ENV_VAR || "pNInz6obpgDQGcFmaJgB"; // Adam - reliable built-in voice
+        
+        console.log("Generating speech for response:", jarvisResponse.substring(0, 100) + "...");
+        console.log("Using voice ID:", voiceId);
+        console.log("API key configured:", elevenLabsApiKey ? "YES" : "NO");
         
         const ttsResponse = await fetch(`https://api.elevenlabs.io/v1/text-to-speech/${voiceId}`, {
           method: 'POST',
@@ -129,9 +134,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
           
           fs.writeFileSync(audioPath, Buffer.from(audioBuffer));
           audioUrl = `/api/audio/${audioFilename}`;
+          console.log("✅ Voice file generated successfully:", audioFilename);
+        } else {
+          const errorText = await ttsResponse.text();
+          console.error("❌ ElevenLabs API Error:", ttsResponse.status, errorText);
         }
       } catch (ttsError) {
-        console.error("Error generating speech:", ttsError);
+        console.error("❌ Error generating speech:", ttsError);
         // Continue without audio if TTS fails
       }
 
