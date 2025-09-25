@@ -19,7 +19,6 @@ export default function JarvisInterface({ sessionId }: JarvisInterfaceProps) {
   const [showConversationalAI, setShowConversationalAI] = useState(false);
   const [conversationMode, setConversationMode] = useState(false);
   const [isWaitingForResponse, setIsWaitingForResponse] = useState(false);
-  const [useElevenLabsWidget, setUseElevenLabsWidget] = useState(false);
   
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const audioChunksRef = useRef<Blob[]>([]);
@@ -360,7 +359,6 @@ export default function JarvisInterface({ sessionId }: JarvisInterfaceProps) {
       // Invalidate conversations to trigger refetch
       queryClient.invalidateQueries({ queryKey: ['/api/conversations', sessionId] });
       setIsWaitingForResponse(false);
-      setIsProcessing(false); // Always reset processing state
       
       // Play audio response if available
       if (jarvisResponse.audioUrl) {
@@ -418,7 +416,6 @@ export default function JarvisInterface({ sessionId }: JarvisInterfaceProps) {
     onError: (error) => {
       console.error('JARVIS request failed:', error);
       setIsWaitingForResponse(false);
-      setIsProcessing(false); // Reset processing state on error
       setConversationMode(false); // Exit conversation mode on error
       setStatus("Error occurred. Ready for your command, sir.");
       toast({
@@ -701,98 +698,34 @@ export default function JarvisInterface({ sessionId }: JarvisInterfaceProps) {
         </div>
       )}
 
-      {/* Top Right Controls */}
-      <div className="fixed top-8 right-8 z-20 flex flex-col space-y-2">
-        {/* Emergency Stop Button */}
-        {(isProcessing || conversationMode || isRecording) && (
-          <Button
-            onClick={() => {
-              setIsProcessing(false);
-              setConversationMode(false);
-              setIsRecording(false);
-              setIsWaitingForResponse(false);
-              setVoiceVisualizationVisible(false);
-              setStatus("Ready for your command, sir.");
-              // Stop media recorder if active
-              if (mediaRecorderRef.current && mediaRecorderRef.current.state !== 'inactive') {
-                mediaRecorderRef.current.stop();
-              }
-              console.log('Emergency stop: All states reset');
-            }}
-            className="bg-red-600/90 hover:bg-red-600 border-2 border-red-400 text-white text-sm font-bold"
-          >
-            🛑 STOP
-          </Button>
-        )}
-        
-        {/* Voice Interface Toggle */}
-        <Button
-          onClick={() => setUseElevenLabsWidget(!useElevenLabsWidget)}
-          className="bg-gray-900/90 backdrop-blur-sm border-2 border-cyan-400/60 text-cyan-400 hover:bg-cyan-900/40 text-sm"
-        >
-          {useElevenLabsWidget ? "Use Original Button" : "Use ElevenLabs Widget"}
-        </Button>
-      </div>
-
-      {/* Voice Interface - Center Bottom */}
+      {/* Talk to JARVIS Button - Center Bottom */}
       <div className="fixed bottom-16 left-1/2 transform -translate-x-1/2 z-20">
-        {useElevenLabsWidget ? (
-          /* ElevenLabs Conversational Agent Widget */
-          <div className="elevenlabs-widget-container bg-gray-900/90 backdrop-blur-sm border-2 border-cyan-400/60 rounded-2xl p-4">
-            <div className="relative">
-              <div dangerouslySetInnerHTML={{
-                __html: `<elevenlabs-convai agent-id="agent_9001k60fwb0pfwtvnfmz9zh24xh4"></elevenlabs-convai>`
-              }} />
-              
-              {/* Manual Bridge Button for Testing */}
-              <button
-                onClick={() => {
-                  const testMessage = prompt('Enter message to send to JARVIS:');
-                  if (testMessage) {
-                    console.log('Manual bridge: sending message to n8n:', testMessage);
-                    jarvisMutation.mutate({ message: testMessage, sessionId });
-                    toast({
-                      title: "Message sent to JARVIS",
-                      description: `Sent: "${testMessage.substring(0, 50)}..."`
-                    });
-                  }
-                }}
-                className="absolute -top-2 -right-2 w-6 h-6 bg-blue-500 hover:bg-blue-600 text-white rounded-full text-xs font-bold border border-blue-400"
-                title="Test n8n Bridge"
-              >
-                →
-              </button>
-            </div>
-          </div>
-        ) : (
-          /* Original Talk to JARVIS Button */
-          <VoiceButton
-            onStartRecording={() => {
-              if (!conversationMode) {
-                console.log('Starting continuous conversation mode');
-                setConversationMode(true);
-                startRecording();
-              } else {
-                console.log('Ending conversation mode');
-                setConversationMode(false);
-                if (isRecording) {
-                  stopRecordingHandler();
-                }
-              }
-            }}
-            onStopRecording={() => {
-              if (conversationMode && isRecording) {
-                stopRecordingHandler();
-              } else if (!conversationMode) {
+        <VoiceButton
+          onStartRecording={() => {
+            if (!conversationMode) {
+              console.log('Starting continuous conversation mode');
+              setConversationMode(true);
+              startRecording();
+            } else {
+              console.log('Ending conversation mode');
+              setConversationMode(false);
+              if (isRecording) {
                 stopRecordingHandler();
               }
-            }}
-            isRecording={isRecording}
-            isProcessing={isProcessing}
-            conversationMode={conversationMode}
-            isWaitingForResponse={isWaitingForResponse}
-          />
-        )}
+            }
+          }}
+          onStopRecording={() => {
+            if (conversationMode && isRecording) {
+              stopRecordingHandler();
+            } else if (!conversationMode) {
+              stopRecordingHandler();
+            }
+          }}
+          isRecording={isRecording}
+          isProcessing={isProcessing}
+          conversationMode={conversationMode}
+          isWaitingForResponse={isWaitingForResponse}
+        />
       </div>
 
 
