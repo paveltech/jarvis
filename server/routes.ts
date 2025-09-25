@@ -92,7 +92,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
         throw new Error(`Webhook request failed: ${webhookResponse.statusText}`);
       }
 
-      const jarvisResponse = await webhookResponse.text();
+      const jarvisResponseRaw = await webhookResponse.text();
+      console.log("Raw n8n response:", jarvisResponseRaw);
+      
+      // Parse the n8n response which comes as JSON string
+      let jarvisResponse;
+      try {
+        const parsed = JSON.parse(jarvisResponseRaw);
+        jarvisResponse = parsed.output || jarvisResponseRaw; // Extract 'output' field or use raw text
+        console.log("Parsed JARVIS response:", jarvisResponse);
+      } catch (parseError) {
+        jarvisResponse = jarvisResponseRaw; // Fallback to raw text
+        console.log("Using raw response as fallback:", jarvisResponse);
+      }
 
       // Generate speech using ElevenLabs
       let audioUrl: string | undefined;
