@@ -182,13 +182,6 @@ export default function JarvisInterface({ sessionId }: JarvisInterfaceProps) {
               }}
             />
           ))}
-          {/* Technical readouts */}
-          <div className="absolute top-0 left-1/2 transform -translate-x-1/2 -translate-y-8 text-cyan-400/80 text-xs font-mono">
-            SYSTEM ONLINE
-          </div>
-          <div className="absolute bottom-0 left-1/2 transform -translate-x-1/2 translate-y-8 text-cyan-400/80 text-xs font-mono">
-            AI.READY
-          </div>
         </div>
 
         {/* Inner Data Ring - 360px */}
@@ -238,20 +231,6 @@ export default function JarvisInterface({ sessionId }: JarvisInterfaceProps) {
           </div>
         </div>
 
-        {/* Horizontal Technical Displays */}
-        <div className="absolute left-[-200px] top-1/2 transform -translate-y-1/2">
-          <div className="bg-cyan-400/10 border border-cyan-400/40 px-4 py-2 backdrop-blur-sm">
-            <div className="text-cyan-400 text-xs font-mono">NEURAL.NET</div>
-            <div className="text-cyan-400/60 text-xs font-mono">█████████░ 94%</div>
-          </div>
-        </div>
-        
-        <div className="absolute right-[-200px] top-1/2 transform -translate-y-1/2">
-          <div className="bg-cyan-400/10 border border-cyan-400/40 px-4 py-2 backdrop-blur-sm">
-            <div className="text-cyan-400 text-xs font-mono">PROCESSING</div>
-            <div className="text-cyan-400/60 text-xs font-mono">████████░░ 87%</div>
-          </div>
-        </div>
 
         {/* Scanner Beam */}
         <div className="absolute w-[360px] h-[360px] rounded-full overflow-hidden">
@@ -294,20 +273,12 @@ export default function JarvisInterface({ sessionId }: JarvisInterfaceProps) {
         />
       </div>
 
-      {/* Status Text - Bottom Center */}
-      <div className="fixed bottom-8 left-1/2 transform -translate-x-1/2">
-        <p className="text-cyan-400/80 text-sm font-medium tracking-wide font-mono" data-testid="status-text">
-          {status}
-        </p>
-      </div>
 
-      {/* Processing Overlay */}
+      {/* Processing Overlay - Minimalistic */}
       {isProcessing && (
-        <div className="fixed inset-0 bg-background/95 backdrop-blur-sm flex items-center justify-center z-50" data-testid="processing-overlay">
+        <div className="fixed inset-0 bg-black/95 backdrop-blur-sm flex items-center justify-center z-50" data-testid="processing-overlay">
           <div className="text-center">
-            <div className="w-24 h-24 border-4 border-cyan-400/30 border-t-cyan-400 rounded-full animate-spin mb-6 intense-glow" />
-            <p className="text-cyan-400 font-medium text-lg tracking-wide font-mono">PROCESSING REQUEST...</p>
-            <div className="text-cyan-400/60 text-xs font-mono mt-2">█████████░ ANALYZING</div>
+            <div className="w-24 h-24 border-4 border-cyan-400/30 border-t-cyan-400 rounded-full animate-spin intense-glow" />
           </div>
         </div>
       )}
