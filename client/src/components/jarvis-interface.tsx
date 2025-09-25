@@ -349,206 +349,118 @@ export default function JarvisInterface({ sessionId }: JarvisInterfaceProps) {
       {/* Advanced JARVIS Hub - High-tech Iron Man Style */}
       <div className="relative flex items-center justify-center" data-testid="jarvis-hub">
         
-        {/* Outer Technical Ring - 600px */}
-        <div className="absolute w-[600px] h-[600px] border border-cyan-400/40 rounded-full">
-          {/* Outer ring segments */}
-          {Array.from({ length: 60 }, (_, i) => (
-            <div
-              key={`outer-${i}`}
-              className={`absolute w-2 h-1 ${i % 5 === 0 ? 'bg-cyan-400' : 'bg-cyan-400/40'}`}
-              style={{
-                top: '2px',
-                left: '50%',
-                transformOrigin: '50% 300px',
-                transform: `translateX(-50%) rotate(${i * 6}deg)`,
-              }}
-            />
-          ))}
-          {/* Binary data segments */}
-          {Array.from({ length: 8 }, (_, i) => (
-            <div
-              key={`binary-${i}`}
-              className="absolute text-cyan-400/60 text-xs font-mono"
-              style={{
-                top: '15px',
-                left: '50%',
-                transformOrigin: '50% 285px',
-                transform: `translateX(-50%) rotate(${i * 45}deg)`,
-              }}
-            >
-              {Math.random() > 0.5 ? '1010110' : '0101101'}
-            </div>
-          ))}
-        </div>
 
-        {/* Middle Technical Ring - 480px */}
-        <div className="absolute w-[480px] h-[480px] border-2 border-cyan-400/60 rounded-full">
-          {/* Segmented data ring */}
-          {Array.from({ length: 40 }, (_, i) => (
-            <div
-              key={`middle-${i}`}
-              className={`absolute w-1 h-4 ${i % 3 === 0 ? 'bg-cyan-400' : 'bg-cyan-400/50'}`}
-              style={{
-                top: '0px',
-                left: '50%',
-                transformOrigin: '50% 240px',
-                transform: `translateX(-50%) rotate(${i * 9}deg)`,
-              }}
-            />
-          ))}
-        </div>
-
-        {/* Inner Data Ring - 360px */}
-        <div className="absolute w-[360px] h-[360px] border-2 border-cyan-400/80 rounded-full animate-pulse-slow">
-          {/* Measurement scales */}
-          {Array.from({ length: 72 }, (_, i) => (
-            <div
-              key={`inner-${i}`}
-              className={`absolute ${i % 6 === 0 ? 'w-0.5 h-6 bg-cyan-400' : 'w-px h-3 bg-cyan-400/60'}`}
-              style={{
-                top: '0px',
-                left: '50%',
-                transformOrigin: '50% 180px',
-                transform: `translateX(-50%) rotate(${i * 5}deg)`,
-              }}
-            />
-          ))}
-          {/* Binary ring */}
-          <div className="absolute inset-4 border border-cyan-400/40 rounded-full flex items-center justify-center">
-            <div className="text-cyan-400/60 text-xs font-mono absolute top-2 left-1/2 transform -translate-x-1/2">
-              001100100111001
-            </div>
-          </div>
-        </div>
-
-        {/* Core Ring - 240px */}
-        <div className="absolute w-[240px] h-[240px] border-4 border-cyan-400 rounded-full intense-glow animate-glow">
-          {/* Core segments */}
-          {Array.from({ length: 24 }, (_, i) => (
-            <div
-              key={`core-${i}`}
-              className="absolute w-1 h-8 bg-cyan-400"
-              style={{
-                top: '0px',
-                left: '50%',
-                transformOrigin: '50% 120px',
-                transform: `translateX(-50%) rotate(${i * 15}deg)`,
-              }}
-            />
-          ))}
-        </div>
-
-        {/* Authentic JARVIS Central Interface */}
-        <div className="relative w-48 h-48 flex items-center justify-center">
+        {/* Authentic JARVIS Interface - Exactly as shown in reference image */}
+        <div className="relative w-64 h-64 flex items-center justify-center">
           
-          {/* Outermost Ring with Segmented Arcs */}
-          <div className="absolute w-48 h-48 border border-cyan-400/50 rounded-full">
-            {/* Outer arc segments */}
-            {Array.from({ length: 60 }, (_, i) => (
+          {/* Ring 5 - Outermost interrupted circles with square dots (like reference) */}
+          <div className="absolute w-60 h-60">
+            {/* Interrupted outer arc segments */}
+            {Array.from({ length: 8 }, (_, i) => (
               <div
                 key={`outer-arc-${i}`}
-                className={`absolute ${
-                  i % 10 === 0 ? 'w-0.5 h-4 bg-cyan-400' : 
-                  i % 5 === 0 ? 'w-px h-3 bg-cyan-400/80' : 
-                  'w-px h-2 bg-cyan-400/40'
+                className="absolute bg-cyan-400/60 rounded-full"
+                style={{
+                  width: i % 2 === 0 ? '35px' : '25px',
+                  height: '2px',
+                  top: '50%',
+                  left: '50%',
+                  transformOrigin: '0px 0px',
+                  transform: `translate(-50%, -50%) rotate(${i * 45}deg) translateX(118px)`,
+                }}
+              />
+            ))}
+            
+            {/* Square dot indicators exactly like reference */}
+            {Array.from({ length: 16 }, (_, i) => (
+              <div
+                key={`square-dot-${i}`}
+                className="absolute w-1.5 h-1.5 bg-cyan-400/80"
+                style={{
+                  top: '50%',
+                  left: '50%',
+                  transform: `translate(-50%, -50%) rotate(${i * 22.5}deg) translateX(115px)`,
+                }}
+              />
+            ))}
+          </div>
+
+          {/* Ring 4 - Segmented arcs with strategic gaps (matching reference) */}
+          <div className="absolute w-48 h-48">
+            {/* Main segmented arcs - broken pattern like reference */}
+            {Array.from({ length: 12 }, (_, i) => (
+              <div
+                key={`seg-arc-${i}`}
+                className="absolute bg-cyan-400/70 rounded-sm"
+                style={{
+                  width: i % 3 === 0 ? '28px' : '20px',
+                  height: '1.5px',
+                  top: '50%',
+                  left: '50%',
+                  transformOrigin: '0px 0px',
+                  transform: `translate(-50%, -50%) rotate(${i * 30}deg) translateX(94px)`,
+                }}
+              />
+            ))}
+          </div>
+
+          {/* Ring 3 - Binary Data Display (curved text like reference) */}
+          <div className="absolute w-40 h-40">
+            {/* Curved binary text segments around the ring - positioned at radius 78px */}
+            {Array.from({ length: 4 }, (_, quadrant) => {
+              const binaryStrings = ['0000000000', '0010010010', '0000000000', '0001100010'];
+              const angleStart = quadrant * 90 - 25; // Start angle for each quadrant
+              return Array.from({ length: 10 }, (_, charIndex) => (
+                <div
+                  key={`binary-${quadrant}-${charIndex}`}
+                  className="absolute text-[9px] font-mono text-cyan-400/90 font-bold"
+                  style={{
+                    top: '50%',
+                    left: '50%',
+                    transform: `translate(-50%, -50%) rotate(${angleStart + charIndex * 5}deg) translateY(-78px) rotate(-${angleStart + charIndex * 5}deg)`,
+                  }}
+                >
+                  {binaryStrings[quadrant][charIndex]}
+                </div>
+              ));
+            })}
+          </div>
+
+          {/* Ring 2 - Measurement scales and tick marks (like reference) */}
+          <div className="absolute w-32 h-32 border border-cyan-400/70 rounded-full">
+            {/* Main tick marks with correct positioning at radius 64px */}
+            {Array.from({ length: 72 }, (_, i) => (
+              <div
+                key={`tick-${i}`}
+                className={`absolute bg-cyan-400/80 ${
+                  i % 18 === 0 ? 'w-0.5 h-4' : 
+                  i % 6 === 0 ? 'w-px h-3' : 
+                  'w-px h-2'
                 }`}
                 style={{
-                  top: '-2px',
+                  top: i % 18 === 0 ? '-8px' : i % 6 === 0 ? '-6px' : '-4px',
                   left: '50%',
-                  transformOrigin: '50% 96px',
-                  transform: `translateX(-50%) rotate(${i * 6}deg)`,
+                  transformOrigin: '50% 64px',
+                  transform: `translateX(-50%) rotate(${i * 5}deg)`,
                 }}
               />
             ))}
-            
-            {/* Technical readouts around outer ring */}
-            <div className="absolute -top-6 left-1/2 transform -translate-x-1/2 text-cyan-400/80 text-xs font-mono">
-              0000000000
-            </div>
-            <div className="absolute top-1/2 -right-8 transform -translate-y-1/2 rotate-90 text-cyan-400/80 text-xs font-mono">
-              0010100101
-            </div>
-            <div className="absolute -bottom-6 left-1/2 transform -translate-x-1/2 text-cyan-400/80 text-xs font-mono">
-              1111111111
-            </div>
-            <div className="absolute top-1/2 -left-8 transform -translate-y-1/2 -rotate-90 text-cyan-400/80 text-xs font-mono">
-              1010001010
-            </div>
           </div>
 
-          {/* Middle Ring with Measurement Indicators */}
-          <div className="absolute w-36 h-36 border border-cyan-400/70 rounded-full">
-            {/* Middle ring segments */}
-            {Array.from({ length: 36 }, (_, i) => (
-              <div
-                key={`middle-arc-${i}`}
-                className={`absolute ${
-                  i % 6 === 0 ? 'w-0.5 h-3 bg-cyan-400' : 'w-px h-2 bg-cyan-400/60'
-                }`}
-                style={{
-                  top: '-1px',
-                  left: '50%',
-                  transformOrigin: '50% 72px',
-                  transform: `translateX(-50%) rotate(${i * 10}deg)`,
-                }}
-              />
-            ))}
+          {/* Ring 1 - Inner bright glow ring (matching reference intensity) */}
+          <div className="absolute w-24 h-24 border-2 border-cyan-400 rounded-full bg-gradient-radial from-cyan-400/25 via-cyan-400/15 to-transparent animate-jarvis-core-pulse shadow-[0_0_20px_rgba(0,255,255,0.6)]"></div>
+
+          {/* Center Core - JARVIS Text with authentic glow (exactly like reference) */}
+          <div className="absolute w-20 h-20 flex items-center justify-center bg-gradient-radial from-cyan-400/20 via-cyan-400/10 to-transparent rounded-full">
+            {/* Central background glow - stronger like reference */}
+            <div className="absolute w-16 h-16 bg-gradient-radial from-cyan-400/40 via-cyan-400/20 to-transparent rounded-full animate-jarvis-glow-breath"></div>
             
-            {/* Quadrant numbers */}
-            <div className="absolute -top-4 left-1/2 transform -translate-x-1/2 text-cyan-400 text-sm font-mono">0</div>
-            <div className="absolute top-1/2 -right-4 transform -translate-y-1/2 text-cyan-400 text-sm font-mono">90</div>
-            <div className="absolute -bottom-4 left-1/2 transform -translate-x-1/2 text-cyan-400 text-sm font-mono">180</div>
-            <div className="absolute top-1/2 -left-4 transform -translate-y-1/2 text-cyan-400 text-sm font-mono">270</div>
+            {/* J.A.R.V.I.S Text - Authentic font and positioning */}
+            <span className="relative z-10 text-white font-sans text-sm tracking-[0.25em] font-normal animate-jarvis-text-glow">
+              J.A.R.V.I.S
+            </span>
           </div>
 
-          {/* Inner Technical Ring */}
-          <div className="absolute w-28 h-28 border border-cyan-400/80 rounded-full">
-            {/* Inner precision markers */}
-            {Array.from({ length: 24 }, (_, i) => (
-              <div
-                key={`inner-precision-${i}`}
-                className="absolute w-px h-2 bg-cyan-400/70"
-                style={{
-                  top: '0px',
-                  left: '50%',
-                  transformOrigin: '50% 56px',
-                  transform: `translateX(-50%) rotate(${i * 15}deg)`,
-                }}
-              />
-            ))}
-            
-            {/* Status indicators */}
-            <div className="absolute top-2 left-1/2 transform -translate-x-1/2 w-1 h-1 bg-cyan-400 rounded-full"></div>
-            <div className="absolute bottom-2 left-1/2 transform -translate-x-1/2 w-1 h-1 bg-cyan-400 rounded-full"></div>
-            <div className="absolute top-1/2 left-2 transform -translate-y-1/2 w-1 h-1 bg-cyan-400 rounded-full"></div>
-            <div className="absolute top-1/2 right-2 transform -translate-y-1/2 w-1 h-1 bg-cyan-400 rounded-full"></div>
-          </div>
-
-          {/* Tony Stark Arc Reactor Core - Heartbeat Pulsation */}
-          <div className="absolute w-24 h-24 flex items-center justify-center">
-            {/* Outer Halo - Breathing Glow */}
-            <div className="absolute w-24 h-24 bg-gradient-radial from-cyan-400/20 via-cyan-400/10 to-transparent rounded-full animate-jarvis-glow-breath"></div>
-            
-            {/* Core Shell - Main Pulsing Heart */}
-            <div className="absolute w-20 h-20 bg-gradient-radial from-cyan-500/40 via-cyan-400/25 to-transparent rounded-full border-2 border-cyan-400 animate-jarvis-core-pulse flex items-center justify-center">
-              {/* Inner Heart Chamber */}
-              <div className="w-20 h-20 bg-gradient-radial from-black/60 via-black/40 to-black/20 border border-cyan-400/80 rounded-full flex items-center justify-center relative">
-                {/* Central Arc Reactor Glow */}
-                <div className="absolute inset-1 bg-gradient-radial from-cyan-400/30 to-transparent rounded-full"></div>
-                
-                {/* J.A.R.V.I.S Text with Heartbeat Glow */}
-                <span className="relative z-10 text-cyan-100 font-mono text-xs tracking-[0.15em] font-bold animate-jarvis-text-glow whitespace-nowrap">
-                  J.A.R.V.I.S
-                </span>
-              </div>
-            </div>
-          </div>
-
-          {/* Connection Lines to Outer Elements */}
-          <div className="absolute w-0.5 h-8 bg-gradient-to-t from-cyan-400 to-transparent top-0 left-1/2 transform -translate-x-1/2"></div>
-          <div className="absolute w-0.5 h-8 bg-gradient-to-b from-cyan-400 to-transparent bottom-0 left-1/2 transform -translate-x-1/2"></div>
-          <div className="absolute h-0.5 w-8 bg-gradient-to-r from-cyan-400 to-transparent top-1/2 left-0 transform -translate-y-1/2"></div>
-          <div className="absolute h-0.5 w-8 bg-gradient-to-l from-cyan-400 to-transparent top-1/2 right-0 transform -translate-y-1/2"></div>
         </div>
 
 
@@ -757,7 +669,7 @@ export default function JarvisInterface({ sessionId }: JarvisInterfaceProps) {
             }
           }}
         />
-        <Button 
+        <Button
           onClick={() => {
             if (testMessage.trim()) {
               jarvisMutation.mutate({ message: testMessage, sessionId });
