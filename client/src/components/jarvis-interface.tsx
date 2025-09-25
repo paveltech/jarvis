@@ -19,6 +19,7 @@ export default function JarvisInterface({ sessionId }: JarvisInterfaceProps) {
   const [showConversationalAI, setShowConversationalAI] = useState(false);
   const [conversationMode, setConversationMode] = useState(false);
   const [isWaitingForResponse, setIsWaitingForResponse] = useState(false);
+  const [useElevenLabsWidget, setUseElevenLabsWidget] = useState(false);
   
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const audioChunksRef = useRef<Blob[]>([]);
@@ -597,34 +598,75 @@ export default function JarvisInterface({ sessionId }: JarvisInterfaceProps) {
         </div>
       )}
 
-      {/* ElevenLabs Conversational Agent Widget - Center Bottom */}
+      {/* Voice Interface Toggle - Top Right */}
+      <div className="fixed top-8 right-8 z-20">
+        <Button
+          onClick={() => setUseElevenLabsWidget(!useElevenLabsWidget)}
+          className="bg-gray-900/90 backdrop-blur-sm border-2 border-cyan-400/60 text-cyan-400 hover:bg-cyan-900/40 text-sm"
+        >
+          {useElevenLabsWidget ? "Use Original Button" : "Use ElevenLabs Widget"}
+        </Button>
+      </div>
+
+      {/* Voice Interface - Center Bottom */}
       <div className="fixed bottom-16 left-1/2 transform -translate-x-1/2 z-20">
-        <div className="elevenlabs-widget-container bg-gray-900/90 backdrop-blur-sm border-2 border-cyan-400/60 rounded-2xl p-4">
-          <div className="relative">
-            <div dangerouslySetInnerHTML={{
-              __html: `<elevenlabs-convai agent-id="agent_9001k60fwb0pfwtvnfmz9zh24xh4"></elevenlabs-convai>`
-            }} />
-            
-            {/* Manual Bridge Button for Testing */}
-            <button
-              onClick={() => {
-                const testMessage = prompt('Enter message to send to JARVIS:');
-                if (testMessage) {
-                  console.log('Manual bridge: sending message to n8n:', testMessage);
-                  jarvisMutation.mutate({ message: testMessage, sessionId });
-                  toast({
-                    title: "Message sent to JARVIS",
-                    description: `Sent: "${testMessage.substring(0, 50)}..."`
-                  });
-                }
-              }}
-              className="absolute -top-2 -right-2 w-6 h-6 bg-blue-500 hover:bg-blue-600 text-white rounded-full text-xs font-bold border border-blue-400"
-              title="Test n8n Bridge"
-            >
-              →
-            </button>
+        {useElevenLabsWidget ? (
+          /* ElevenLabs Conversational Agent Widget */
+          <div className="elevenlabs-widget-container bg-gray-900/90 backdrop-blur-sm border-2 border-cyan-400/60 rounded-2xl p-4">
+            <div className="relative">
+              <div dangerouslySetInnerHTML={{
+                __html: `<elevenlabs-convai agent-id="agent_9001k60fwb0pfwtvnfmz9zh24xh4"></elevenlabs-convai>`
+              }} />
+              
+              {/* Manual Bridge Button for Testing */}
+              <button
+                onClick={() => {
+                  const testMessage = prompt('Enter message to send to JARVIS:');
+                  if (testMessage) {
+                    console.log('Manual bridge: sending message to n8n:', testMessage);
+                    jarvisMutation.mutate({ message: testMessage, sessionId });
+                    toast({
+                      title: "Message sent to JARVIS",
+                      description: `Sent: "${testMessage.substring(0, 50)}..."`
+                    });
+                  }
+                }}
+                className="absolute -top-2 -right-2 w-6 h-6 bg-blue-500 hover:bg-blue-600 text-white rounded-full text-xs font-bold border border-blue-400"
+                title="Test n8n Bridge"
+              >
+                →
+              </button>
+            </div>
           </div>
-        </div>
+        ) : (
+          /* Original Talk to JARVIS Button */
+          <VoiceButton
+            onStartRecording={() => {
+              if (!conversationMode) {
+                console.log('Starting continuous conversation mode');
+                setConversationMode(true);
+                startRecording();
+              } else {
+                console.log('Ending conversation mode');
+                setConversationMode(false);
+                if (isRecording) {
+                  stopRecordingHandler();
+                }
+              }
+            }}
+            onStopRecording={() => {
+              if (conversationMode && isRecording) {
+                stopRecordingHandler();
+              } else if (!conversationMode) {
+                stopRecordingHandler();
+              }
+            }}
+            isRecording={isRecording}
+            isProcessing={isProcessing}
+            conversationMode={conversationMode}
+            isWaitingForResponse={isWaitingForResponse}
+          />
+        )}
       </div>
 
 
