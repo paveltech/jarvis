@@ -145,52 +145,104 @@ export default function JarvisInterface({ sessionId }: JarvisInterfaceProps) {
     const setupWidgetEventListeners = () => {
       // Wait for the widget to be defined
       customElements.whenDefined('elevenlabs-convai').then(() => {
-        console.log('ElevenLabs widget defined, setting up event bridge...');
+        console.log('ElevenLabs widget defined, setting up JARVIS conversation integration...');
         
-        // Monitor for widget events and bridge to n8n
+        // CREATE and CONFIGURE the actual widget
         setTimeout(() => {
-          const widget = document.querySelector('elevenlabs-convai');
-          if (widget) {
-            console.log('Found ElevenLabs widget, setting up conversation bridge...');
+          const container = document.getElementById('elevenlabs-widget-container');
+          if (container && !container.querySelector('elevenlabs-convai')) {
+            console.log('🎯 Creating ElevenLabs Conversational Agent widget...');
             
-            // Add mutation observer to capture conversation events
-            const observer = new MutationObserver((mutations) => {
-              mutations.forEach((mutation) => {
-                // Look for text changes that might indicate user input or responses
-                if (mutation.type === 'childList' || mutation.type === 'characterData') {
-                  const text = widget.textContent || '';
-                  if (text.trim() && text.length > 5) {
-                    console.log('Widget text detected:', text);
-                    // You could parse this text and relay specific parts to n8n if needed
-                  }
-                }
-              });
-            });
+            // Create the widget element
+            const widget = document.createElement('elevenlabs-convai') as any;
             
-            observer.observe(widget, {
-              childList: true,
-              subtree: true,
-              characterData: true
-            });
+            // Configure the widget with your credentials
+            widget.setAttribute('agent-id', 'your-conversational-agent-id'); // You'll need to configure this
+            widget.setAttribute('public-user-id', 'jarvis-user');
             
-            // Try to hook into widget events if available
-            ['message', 'speech', 'userInput', 'conversation'].forEach(eventType => {
+            // Style the widget to be invisible but functional
+            widget.style.width = '120px';
+            widget.style.height = '120px';
+            widget.style.opacity = '0';
+            widget.style.pointerEvents = 'auto';
+            widget.style.position = 'absolute';
+            widget.style.top = '50%';
+            widget.style.left = '50%';
+            widget.style.transform = 'translate(-50%, -50%)';
+            
+            container.appendChild(widget);
+            
+            // Set up comprehensive event listeners for natural conversation
+            const eventTypes = [
+              'conversation-started',
+              'conversation-ended', 
+              'user-speaking-started',
+              'user-speaking-ended',
+              'agent-speaking-started',
+              'agent-speaking-ended',
+              'user-transcript',
+              'agent-response'
+            ];
+            
+            eventTypes.forEach(eventType => {
               widget.addEventListener(eventType, (event: Event) => {
-                console.log(`ElevenLabs ${eventType} event:`, event);
-                
-                // Extract user message and relay to n8n
                 const customEvent = event as CustomEvent;
-                const userMessage = customEvent.detail?.message || customEvent.detail?.text;
-                if (userMessage) {
-                  console.log('Relaying user message to n8n:', userMessage);
-                  jarvisMutation.mutate({ message: userMessage, sessionId });
+                console.log(`🎯 ElevenLabs ${eventType}:`, customEvent.detail);
+                
+                // Handle different event types
+                switch(eventType) {
+                  case 'conversation-started':
+                    setConversationMode(true);
+                    setStatus("JARVIS is listening, sir...");
+                    break;
+                    
+                  case 'conversation-ended':
+                    setConversationMode(false);
+                    setStatus("Ready for your command, sir...");
+                    break;
+                    
+                  case 'user-speaking-started':
+                    setStatus("Listening to your command...");
+                    break;
+                    
+                  case 'agent-speaking-started':
+                    setStatus("JARVIS is responding...");
+                    // This handles the interruption naturally!
+                    break;
+                    
+                  case 'agent-speaking-ended':
+                    setStatus("JARVIS is listening, sir...");
+                    break;
+                    
+                  case 'user-transcript':
+                    const userMessage = customEvent.detail?.transcript || customEvent.detail?.text;
+                    if (userMessage) {
+                      console.log('🎤 User said:', userMessage);
+                      setStatus("JARVIS is processing your request...");
+                      
+                      // Send to n8n workflow for processing
+                      jarvisMutation.mutate({ 
+                        message: userMessage, 
+                        sessionId: sessionId 
+                      });
+                    }
+                    break;
+                    
+                  case 'agent-response':
+                    const agentMessage = customEvent.detail?.response || customEvent.detail?.text;
+                    if (agentMessage) {
+                      console.log('🤖 JARVIS responded:', agentMessage);
+                    }
+                    break;
                 }
               });
             });
+            
+            console.log('✅ ElevenLabs widget fully configured for JARVIS!');
           }
         }, 2000);
       }).catch(error => {
-        console.error('Error setting up widget listeners:', error);
+        console.error('Error setting up ElevenLabs widget:', error);
       });
     };
 
@@ -860,31 +912,48 @@ export default function JarvisInterface({ sessionId }: JarvisInterfaceProps) {
                 e.stopPropagation();
                 console.log('🎯 User clicked JARVIS center - triggering widget');
                 
-                // Try to trigger ElevenLabs widget
+                // Use ElevenLabs widget for natural conversation
                 const widget = document.querySelector('elevenlabs-convai') as any;
-                if (widget && widget.startConversation) {
-                  console.log('🎤 Starting ElevenLabs conversation');
-                  widget.startConversation();
-                } else {
-                  console.log('🔄 Widget not ready, using fallback');
-                  // Fallback to original behavior
+                
+                if (widget) {
+                  console.log('🎯 ElevenLabs widget found, managing conversation naturally');
+                  
+                  // If JARVIS is speaking, the widget handles interruption automatically
                   if (currentAudioRef.current) {
+                    console.log('🛑 JARVIS speaking - widget will handle interruption');
+                    // ElevenLabs handles this naturally, no manual intervention needed
                     currentAudioRef.current.pause();
-                    currentAudioRef.current.currentTime = 0;
+                    currentAudioRef.current.currentTime = 0; 
                     currentAudioRef.current.src = '';
                     currentAudioRef.current = null;
                     setStatus("Ready for your command, sir...");
                     return;
                   }
                   
-                  // If not in conversation mode, start listening
+                  // Start or manage conversation through widget
                   if (!conversationMode) {
-                    console.log('🎤 Starting conversation via center click');
-                    startWebSpeechRecognition();
+                    console.log('🎤 Starting ElevenLabs conversation');
+                    if (widget.startConversation) {
+                      widget.startConversation();
+                    }
+                    setStatus("JARVIS is listening, sir...");
                   } else {
-                    console.log('🛑 Stopping conversation via center click');
-                    stopWebSpeechRecognition();
+                    console.log('🛑 Ending ElevenLabs conversation');
+                    if (widget.endConversation) {
+                      widget.endConversation();
+                    }
+                    setStatus("Ready for your command, sir...");
                   }
+                } else {
+                  console.log('⚠️ ElevenLabs widget not found, using fallback method');
+                  // Simple fallback - stop any current audio
+                  if (currentAudioRef.current) {
+                    currentAudioRef.current.pause();
+                    currentAudioRef.current.currentTime = 0;
+                    currentAudioRef.current.src = '';
+                    currentAudioRef.current = null;
+                  }
+                  setStatus("Click failed - please try voice button instead");
                 }
               }}
               data-testid="jarvis-center-click">
