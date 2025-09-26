@@ -723,7 +723,7 @@ export default function JarvisInterface({ sessionId }: JarvisInterfaceProps) {
               return (
                 <div
                   key={`binary-segment-${segment}`}
-                  className="absolute text-[10px] font-mono text-cyan-400/90 font-bold tracking-wider jarvis-binary-text"
+                  className="absolute text-[11px] font-mono text-cyan-300/95 font-bold tracking-wider jarvis-binary-text"
                   style={{
                     top: '50%',
                     left: '50%',
