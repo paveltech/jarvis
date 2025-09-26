@@ -102,23 +102,23 @@ export default function JarvisInterface({ sessionId }: JarvisInterfaceProps) {
     return arrayBuffer;
   };
 
-  // Load ElevenLabs conversational agent widget
+  // CORRECT 2024 ElevenLabs Widget Implementation
   useEffect(() => {
-    console.log('Loading ElevenLabs conversational agent...');
+    console.log('🚀 Loading CORRECT 2024 ElevenLabs conversational agent...');
     
     const loadElevenLabsWidget = async () => {
       try {
-        // Check if script already exists
-        const existingScript = document.querySelector('script[src*="convai-widget-embed"]');
+        // Check if script already exists (with new URL)
+        const existingScript = document.querySelector('script[src*="conversational-ai/widget.js"]');
         if (existingScript) {
-          console.log('ElevenLabs script already loaded');
+          console.log('✅ ElevenLabs CORRECT script already loaded');
           return;
         }
 
         const script = document.createElement('script');
-        script.src = 'https://unpkg.com/@elevenlabs/convai-widget-embed';
+        script.src = 'https://elevenlabs.io/conversational-ai/widget.js';
+        script.setAttribute('data-agent-id', 'agent_0601k62vhrxafx98s1k6zshc6n7t');
         script.async = true;
-        script.type = 'text/javascript';
         
         const scriptLoaded = new Promise((resolve, reject) => {
           script.onload = () => {
