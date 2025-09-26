@@ -374,7 +374,13 @@ export default function JarvisInterface({ sessionId }: JarvisInterfaceProps) {
           stopInterruptDetection();
           if (conversationMode) {
             setStatus("Listening, sir...");
-            console.log('JARVIS finished speaking, continuing to listen...');
+            console.log('JARVIS finished speaking, restarting continuous recognition...');
+            // Restart the main speech recognition for next input
+            setTimeout(() => {
+              if (conversationMode) {
+                startWebSpeechRecognition();
+              }
+            }, 1000);
           } else {
             setStatus("Ready for your command, sir.");
           }
@@ -384,7 +390,13 @@ export default function JarvisInterface({ sessionId }: JarvisInterfaceProps) {
           stopInterruptDetection();
           if (conversationMode) {
             setStatus("Listening, sir...");
-            console.log('Audio error, continuing to listen...');
+            console.log('Audio error, restarting continuous recognition...');
+            // Restart the main speech recognition for next input
+            setTimeout(() => {
+              if (conversationMode) {
+                startWebSpeechRecognition();
+              }
+            }, 1000);
           } else {
             setStatus("Ready for your command, sir.");
           }
@@ -399,7 +411,13 @@ export default function JarvisInterface({ sessionId }: JarvisInterfaceProps) {
           stopInterruptDetection();
           if (conversationMode) {
             setStatus("Listening, sir...");
-            console.log('Audio play failed, continuing to listen...');
+            console.log('Audio play failed, restarting continuous recognition...');
+            // Restart the main speech recognition for next input
+            setTimeout(() => {
+              if (conversationMode) {
+                startWebSpeechRecognition();
+              }
+            }, 1000);
           } else {
             setStatus("Ready for your command, sir.");
           }
@@ -407,7 +425,13 @@ export default function JarvisInterface({ sessionId }: JarvisInterfaceProps) {
       } else {
         if (conversationMode) {
           setStatus("Listening, sir...");
-          console.log('No audio response, continuing to listen...');
+          console.log('No audio response, restarting continuous recognition...');
+          // Restart the main speech recognition for next input
+          setTimeout(() => {
+            if (conversationMode) {
+              startWebSpeechRecognition();
+            }
+          }, 1000);
         } else {
           setStatus("Ready for your command, sir.");
         }
