@@ -149,7 +149,41 @@ export default function JarvisInterface({ sessionId }: JarvisInterfaceProps) {
     };
   }, [sessionId]);
 
-  // Enhanced voice interruption detection
+  // UNIFIED: Enhanced Natural Conversation System (Single Recognition Instance)
+  const interruptionModeRef = useRef<boolean>(false);
+  
+  const handleNaturalInterruption = (userInput: string) => {
+    // Only interrupt if JARVIS is currently speaking
+    if (currentAudioRef.current && userInput.trim().length > 2) {
+      console.log('🛑 User interruption detected during JARVIS speech:', userInput);
+      
+      // Immediate JARVIS interruption
+      currentAudioRef.current.pause();
+      currentAudioRef.current = null;
+      setStatus("JARVIS interrupted. Processing your request...");
+      
+      // CRITICAL: DON'T destroy recognitionRef - keep conversation alive
+      // Just disable interruption mode temporarily
+      interruptionModeRef.current = false;
+      
+      // Process user's interruption as new command
+      console.log('🎯 Processing interrupted command:', userInput);
+      jarvisMutation.mutate({ 
+        message: userInput, 
+        sessionId 
+      });
+      
+      toast({
+        title: "JARVIS Interrupted",
+        description: "Processing your new request...",
+      });
+      
+      return true; // Interruption handled
+    }
+    return false; // No interruption needed
+  };
+  
+  // Enhanced voice interruption detection (legacy fallback)
   const handleVoiceInterruption = () => {
     if (currentAudioRef.current) {
       currentAudioRef.current.pause();
@@ -576,25 +610,40 @@ export default function JarvisInterface({ sessionId }: JarvisInterfaceProps) {
 
     recognition.onresult = async (event: any) => {
       const lastResult = event.results[event.results.length - 1];
-      const transcript = lastResult[0].transcript.toLowerCase().trim();
+      const transcript = lastResult[0].transcript.trim();
       
-      // If JARVIS is speaking and user speaks, interrupt immediately
-      if (currentAudioRef.current && transcript.length > 3) {
+      // UNIFIED: Check for interruption during JARVIS speech (enhances existing logic)
+      if (interruptionModeRef.current && lastResult.isFinal && transcript.length > 2) {
+        const interrupted = handleNaturalInterruption(transcript);
+        if (interrupted) {
+          return; // Interruption handled, don't process as normal command
+        }
+      }
+      
+      // Legacy interruption check (keep for compatibility)
+      if (currentAudioRef.current && transcript.length > 3 && lastResult.isFinal) {
         console.log('🛑 USER INTERRUPTION detected while JARVIS speaking:', transcript);
         currentAudioRef.current.pause();
         currentAudioRef.current.currentTime = 0;
         currentAudioRef.current.src = '';
         currentAudioRef.current = null;
-        setStatus("JARVIS interrupted. Ready for your command, sir...");
-        toast({
-          title: "JARVIS Interrupted",
-          description: "Voice detected - JARVIS stopped speaking.",
-        });
+        setStatus("JARVIS interrupted. Processing your request...");
+        
+        // Process interruption as new command
+        try {
+          await jarvisMutation.mutateAsync({
+            message: transcript,
+            sessionId,
+          });
+        } catch (error) {
+          console.error('Error processing interruption:', error);
+        }
+        return;
       }
       
-      // Only process final results
-      if (lastResult.isFinal) {
-        console.log('🎤 Final transcript:', transcript);
+      // Only process final results as normal commands
+      if (lastResult.isFinal && !currentAudioRef.current) {
+        console.log('🎤 Final transcript (normal):', transcript);
         setStatus("JARVIS is processing your request...");
 
         try {
@@ -606,7 +655,7 @@ export default function JarvisInterface({ sessionId }: JarvisInterfaceProps) {
           console.error('Error sending to JARVIS:', error);
           setStatus("Error processing request. Please try again.");
         }
-      } else {
+      } else if (!lastResult.isFinal) {
         console.log('🎙️ Interim result:', transcript);
       }
     };
@@ -643,14 +692,38 @@ export default function JarvisInterface({ sessionId }: JarvisInterfaceProps) {
 
   // EVENT-SAFE: Removed unreliable trigger word detection
   // Click-to-interrupt is now the primary method for event reliability
+  // UNIFIED: Natural voice interruption using the main recognition system
   const startInterruptDetection = () => {
-    console.log('🎯 Event-safe mode: Click interface to interrupt JARVIS');
-    // No speech recognition - click interface is 100% reliable for events
+    console.log('🎯 Enabling interruption mode on main recognition...');
+    interruptionModeRef.current = true;
+    
+    // Keep the existing recognition running but in interruption mode
+    if (recognitionRef.current) {
+      console.log('✅ Main recognition continues with interruption detection enabled');
+    } else if (conversationMode) {
+      // Start main recognition if not already running and in conversation mode
+      try {
+        startWebSpeechRecognition();
+        console.log('✅ Started main recognition with interruption detection');
+      } catch (error) {
+        console.log('⚠️ Failed to start recognition for interruption detection:', error);
+        toast({
+          title: "Voice Detection Issue",
+          description: "Cannot enable voice interruption. Click to interrupt instead.",
+        });
+      }
+    }
   };
 
   const stopInterruptDetection = () => {
+    console.log('Disabling natural voice interruption...');
+    interruptionModeRef.current = false;
+    
+    // Keep main recognition running for normal conversation flow
+    console.log('✅ Interruption mode disabled, normal conversation continues');
+    
+    // Clean up legacy interrupt recognition if any
     if (interruptRecognitionRef.current) {
-      console.log('Stopping interrupt detection');
       interruptRecognitionRef.current.stop();
       interruptRecognitionRef.current = null;
     }
