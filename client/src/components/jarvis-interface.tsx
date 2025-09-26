@@ -102,9 +102,9 @@ export default function JarvisInterface({ sessionId }: JarvisInterfaceProps) {
     return arrayBuffer;
   };
 
-  // ElevenLabs Widget Integration for Production
+  // MODERN ElevenLabs ConvAI Widget Integration (CORRECT APPROACH)
   useEffect(() => {
-    console.log('🎯 Loading ElevenLabs conversational agent for PRODUCTION...');
+    console.log('🎯 Loading MODERN ElevenLabs ConvAI Widget for PRODUCTION...');
     
     const loadWidget = async () => {
       try {
@@ -114,38 +114,63 @@ export default function JarvisInterface({ sessionId }: JarvisInterfaceProps) {
           return;
         }
         
+        // MODERN: Use official ConvAI Widget CDN
         const script = document.createElement('script');
-        script.src = 'https://elevenlabs.io/conversational-ai/widget.js';
-        script.setAttribute('data-agent-id', 'agent_0601k62vhrxafx98s1k6zshc6n7t');
+        script.src = 'https://cdn.elevenlabs.io/convai-widget/index.js';
         script.async = true;
         
         script.onload = () => {
-          console.log('✅ ElevenLabs script loaded successfully');
-          initializeWidget();
+          console.log('✅ ElevenLabs ConvAI Widget script loaded successfully');
+          initializeModernWidget();
         };
         
         script.onerror = () => {
-          console.log('⚠️ ElevenLabs script failed to load - fallback to Web Speech API');
+          console.log('⚠️ ElevenLabs ConvAI Widget failed to load - fallback to Web Speech API');
         };
         
         document.head.appendChild(script);
       } catch (error) {
-        console.error('ElevenLabs loading error:', error);
+        console.error('ElevenLabs ConvAI Widget loading error:', error);
       }
     };
     
-    const initializeWidget = () => {
-      const container = document.getElementById('elevenlabs-widget-container');
-      if (container) {
-        container.innerHTML = '<div id="elevenlabs-audionative"></div>';
-        console.log('✅ ElevenLabs widget container ready');
+    const initializeModernWidget = () => {
+      try {
+        // MODERN ConvAI Widget - Official API
+        if ((window as any).ConvaiUI) {
+          console.log('🎯 Initializing ElevenLabs ConvAI Widget...');
+          
+          const widget = (window as any).ConvaiUI({
+            agentId: 'agent_0601k62vhrxafx98s1k6zshc6n7t', // Your JARVIS Agent ID
+            apiKey: undefined, // No client-side API key needed
+            // Additional config for barge-in etc.
+          });
+          
+          // Store widget reference for interruption
+          (window as any).jarvisWidget = widget;
+          console.log('✅ ElevenLabs ConvAI Widget initialized successfully');
+          
+        } else {
+          console.log('⚠️ ConvaiUI not available after script load');
+        }
+      } catch (error) {
+        console.error('ElevenLabs ConvAI Widget initialization error:', error);
       }
     };
 
     loadWidget();
     
     return () => {
-      console.log('ElevenLabs widget cleaned up');
+      console.log('ElevenLabs ConvAI Widget cleaned up');
+      // Clean up widget if needed
+      if ((window as any).jarvisWidget) {
+        try {
+          (window as any).jarvisWidget.destroy?.();
+        } catch (e) {
+          console.log('Widget cleanup error:', e);
+        }
+        delete (window as any).jarvisWidget;
+      }
     };
   }, [sessionId]);
 
@@ -537,44 +562,47 @@ export default function JarvisInterface({ sessionId }: JarvisInterfaceProps) {
     }
   };
 
-  // PROFESSIONAL: ElevenLabs Controller-First Approach
+  // MODERN: ElevenLabs ConvAI Widget-First Approach
   const startWebSpeechRecognition = () => {
-    // Check for ElevenLabs controller first (professional method)
-    const controller = (window as any).jarvisController;
+    // Check for modern ConvAI Widget first
+    const widget = (window as any).jarvisWidget;
     
-    if (controller && controller.startConversation) {
-      console.log('🎯 Using ElevenLabs controller for natural conversation');
+    if (widget && widget.startConversation) {
+      console.log('🎯 Using ElevenLabs ConvAI Widget for natural conversation');
       try {
-        controller.startConversation();
+        widget.startConversation();
         setConversationMode(true);
-        setStatus("JARVIS is listening, sir...");
+        setStatus("JARVIS is listening via ElevenLabs...");
         return;
       } catch (error) {
-        console.log('⚠️ ElevenLabs controller failed, falling back:', error);
+        console.log('⚠️ ElevenLabs ConvAI Widget failed, falling back:', error);
       }
     }
     
-    // Fallback: Check widget directly
-    setTimeout(() => {
-      const widget = document.querySelector('elevenlabs-convai') as any;
-      const widgetInContainer = document.querySelector('#elevenlabs-widget-container elevenlabs-convai') as any;
-      const activeWidget = widget || widgetInContainer;
-      
-      if (activeWidget && activeWidget.startConversation) {
-        console.log('🎯 ElevenLabs widget found - starting conversation via widget');
-        try {
-          activeWidget.startConversation();
+    // Fallback: Check if ConvaiUI is available globally
+    if ((window as any).ConvaiUI) {
+      console.log('🎯 ConvaiUI available - attempting to initialize conversation');
+      try {
+        // Try to start conversation with global ConvaiUI
+        const tempWidget = (window as any).ConvaiUI({
+          agentId: 'agent_0601k62vhrxafx98s1k6zshc6n7t',
+          apiKey: undefined,
+        });
+        
+        if (tempWidget && tempWidget.startConversation) {
+          tempWidget.startConversation();
           setConversationMode(true);
-          setStatus("JARVIS is listening, sir...");
+          setStatus("JARVIS is listening via ElevenLabs...");
+          (window as any).jarvisWidget = tempWidget; // Store for later use
           return;
-        } catch (error) {
-          console.log('⚠️ Widget startConversation failed:', error);
         }
+      } catch (error) {
+        console.log('⚠️ ConvaiUI initialization failed:', error);
       }
-      
-      console.log('📢 ElevenLabs not available - using enhanced Web Speech fallback');
-      startWebSpeechFallback();
-    }, 500);
+    }
+    
+    console.log('📢 ElevenLabs ConvAI not available - using enhanced Web Speech fallback');
+    startWebSpeechFallback();
   };
 
   const startWebSpeechFallback = () => {
