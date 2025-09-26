@@ -845,32 +845,46 @@ export default function JarvisInterface({ sessionId }: JarvisInterfaceProps) {
             {/* Additional intense glow layer */}
             <div className="absolute w-24 h-24 bg-gradient-radial from-white/20 via-cyan-400/60 to-transparent rounded-full animate-jarvis-core-pulse"></div>
             
-            {/* J.A.R.V.I.S Text - Authentic font and glow - ENHANCED LIKE ORIGINAL + CLICKABLE */}
+            {/* ElevenLabs Widget Container - Will be populated by DOM manipulation */}
+            <div 
+              id="elevenlabs-widget-container" 
+              className="absolute inset-0 flex items-center justify-center z-20"
+              style={{ opacity: 0, pointerEvents: 'auto' }}
+            />
+
+          {/* J.A.R.V.I.S Text - Authentic font and glow - ENHANCED LIKE ORIGINAL + CLICKABLE */}
             <span 
               className="relative z-10 text-white text-xl animate-jarvis-text-glow cursor-pointer hover:scale-105 transition-transform duration-200" 
               style={{fontFamily: 'Rajdhani, Inter, system-ui, sans-serif', fontWeight: 500, letterSpacing: '0.4em'}}
               onClick={(e) => {
                 e.stopPropagation();
-                console.log('🎯 User clicked JARVIS center to interrupt/interact');
+                console.log('🎯 User clicked JARVIS center - triggering widget');
                 
-                // If JARVIS is speaking, stop immediately
-                if (currentAudioRef.current) {
-                  console.log('🛑 Stopping JARVIS via center click');
-                  currentAudioRef.current.pause();
-                  currentAudioRef.current.currentTime = 0;
-                  currentAudioRef.current.src = '';
-                  currentAudioRef.current = null;
-                  setStatus("Ready for your command, sir...");
-                  return;
-                }
-                
-                // If not in conversation mode, start listening
-                if (!conversationMode) {
-                  console.log('🎤 Starting conversation via center click');
-                  startWebSpeechRecognition();
+                // Try to trigger ElevenLabs widget
+                const widget = document.querySelector('elevenlabs-convai') as any;
+                if (widget && widget.startConversation) {
+                  console.log('🎤 Starting ElevenLabs conversation');
+                  widget.startConversation();
                 } else {
-                  console.log('🛑 Stopping conversation via center click');
-                  stopWebSpeechRecognition();
+                  console.log('🔄 Widget not ready, using fallback');
+                  // Fallback to original behavior
+                  if (currentAudioRef.current) {
+                    currentAudioRef.current.pause();
+                    currentAudioRef.current.currentTime = 0;
+                    currentAudioRef.current.src = '';
+                    currentAudioRef.current = null;
+                    setStatus("Ready for your command, sir...");
+                    return;
+                  }
+                  
+                  // If not in conversation mode, start listening
+                  if (!conversationMode) {
+                    console.log('🎤 Starting conversation via center click');
+                    startWebSpeechRecognition();
+                  } else {
+                    console.log('🛑 Stopping conversation via center click');
+                    stopWebSpeechRecognition();
+                  }
                 }
               }}
               data-testid="jarvis-center-click">
