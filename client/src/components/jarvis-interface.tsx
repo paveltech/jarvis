@@ -587,65 +587,10 @@ export default function JarvisInterface({ sessionId }: JarvisInterfaceProps) {
   };
 
   const startInterruptDetection = () => {
-    console.log('Starting interrupt detection during JARVIS speech');
-    
-    if (!('webkitSpeechRecognition' in window) && !('SpeechRecognition' in window)) {
-      console.log('Speech recognition not supported for interrupt detection');
-      return;
-    }
-
-    const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
-    const interruptRecognition = new SpeechRecognition();
-    
-    interruptRecognition.continuous = false;
-    interruptRecognition.interimResults = false;
-    interruptRecognition.lang = 'de-DE';
-    
-    interruptRecognition.onresult = (event: any) => {
-      const transcript = event.results[0][0].transcript.trim().toLowerCase();
-      console.log('🛑 User interrupted JARVIS:', transcript);
-      
-      // Stop JARVIS immediately
-      if (currentAudioRef.current) {
-        console.log('Stopping JARVIS due to user interrupt');
-        currentAudioRef.current.pause();
-        currentAudioRef.current.currentTime = 0;
-        currentAudioRef.current = null;
-      }
-      
-      // Process the new input
-      if (transcript.length > 2) {
-        console.log('Processing interrupt input:', transcript);
-        setIsWaitingForResponse(true);
-        jarvisMutation.mutate({ message: transcript, sessionId });
-      }
-      
-      stopInterruptDetection();
-    };
-    
-    interruptRecognition.onerror = (event: any) => {
-      console.log('Interrupt detection error:', event.error);
-      if (event.error === 'no-speech') {
-        // Continue trying to detect speech
-        setTimeout(() => {
-          if (currentAudioRef.current) {
-            startInterruptDetection();
-          }
-        }, 500);
-      }
-    };
-    
-    interruptRecognition.onend = () => {
-      // Restart interrupt detection if JARVIS is still speaking
-      if (currentAudioRef.current) {
-        setTimeout(() => {
-          startInterruptDetection();
-        }, 100);
-      }
-    };
-    
-    interruptRecognitionRef.current = interruptRecognition;
-    interruptRecognition.start();
+    console.log('🔇 Interrupt detection temporarily disabled due to audio echo issues');
+    // Temporarily disable interrupt detection to prevent audio feedback loop
+    // where JARVIS' own voice gets detected as user interruption
+    return;
   };
 
   const stopInterruptDetection = () => {
