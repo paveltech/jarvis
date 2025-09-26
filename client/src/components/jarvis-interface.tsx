@@ -559,14 +559,30 @@ export default function JarvisInterface({ sessionId }: JarvisInterfaceProps) {
     };
 
     recognition.onresult = async (event: any) => {
-      const transcript = event.results[event.results.length - 1][0].transcript;
+      const transcript = event.results[event.results.length - 1][0].transcript.toLowerCase().trim();
       console.log('Web Speech API transcribed:', transcript);
       
-      // Temporarily pause listening while processing
+      // Check for voice commands first
+      if (transcript.includes('jarvis') || transcript.includes('stop') || transcript.includes('stopp')) {
+        console.log('🎯 Voice command detected:', transcript);
+        
+        // Stop JARVIS immediately
+        if (currentAudioRef.current) {
+          console.log('🛑 Stopping JARVIS via voice command');
+          currentAudioRef.current.pause();
+          currentAudioRef.current.currentTime = 0;
+          currentAudioRef.current.src = '';
+          currentAudioRef.current = null;
+        }
+        
+        setStatus("Ready for your command, sir...");
+        return; // Don't send to JARVIS API
+      }
+      
+      // If not a voice command, send to JARVIS
       setStatus("JARVIS is processing your request...");
 
       try {
-        // Send directly to JARVIS
         await jarvisMutation.mutateAsync({
           message: transcript,
           sessionId,
@@ -596,12 +612,16 @@ export default function JarvisInterface({ sessionId }: JarvisInterfaceProps) {
 
     recognition.onend = () => {
       console.log('Web Speech API recognition ended');
-      // Only restart if still in conversation mode and not processing
-      if (conversationMode && !jarvisMutation.isPending) {
+      // Only restart if still in conversation mode, not processing, and not manually stopped
+      if (conversationMode && !jarvisMutation.isPending && !isWaitingForResponse) {
         setTimeout(() => {
-          if (conversationMode && recognitionRef.current) {
-            console.log('Restarting continuous recognition...');
-            recognitionRef.current.start();
+          if (conversationMode && recognitionRef.current && !currentAudioRef.current) {
+            console.log('🔄 Restarting continuous recognition...');
+            try {
+              recognitionRef.current.start();
+            } catch (error) {
+              console.log('Recognition already started or error:', error);
+            }
           }
         }, 1000);
       }
@@ -626,11 +646,11 @@ export default function JarvisInterface({ sessionId }: JarvisInterfaceProps) {
   };
 
   const stopWebSpeechRecognition = () => {
-    console.log('Stopping Web Speech API recognition');
+    console.log('🛑 Completely stopping Web Speech API recognition');
     
     // Stop current audio playback immediately
     if (currentAudioRef.current) {
-      console.log('Stopping JARVIS audio playback');
+      console.log('🔇 Stopping JARVIS audio playback');
       currentAudioRef.current.pause();
       currentAudioRef.current.currentTime = 0;
       currentAudioRef.current.src = ''; // Force stop
@@ -640,13 +660,20 @@ export default function JarvisInterface({ sessionId }: JarvisInterfaceProps) {
     // Stop interrupt detection
     stopInterruptDetection();
     
+    // Set flags to prevent auto-restart
     setConversationMode(false);
     setIsRecording(false);
     setVoiceVisualizationVisible(false);
+    setIsWaitingForResponse(false);
     setStatus("Ready for your command, sir.");
     
+    // Forcefully stop and clear recognition
     if (recognitionRef.current) {
-      recognitionRef.current.stop();
+      try {
+        recognitionRef.current.abort(); // More forceful than .stop()
+      } catch (error) {
+        console.log('Recognition already stopped:', error);
+      }
       recognitionRef.current = null;
     }
   };
@@ -665,17 +692,6 @@ export default function JarvisInterface({ sessionId }: JarvisInterfaceProps) {
       <div className="relative flex items-center justify-center" data-testid="jarvis-hub">
         {/* Authentic JARVIS Interface - Based on Original Reference */}
         <div className="relative w-96 h-96 flex items-center justify-center"
-             onClick={() => {
-               if (currentAudioRef.current) {
-                 console.log('🎯 User clicked to interrupt JARVIS');
-                 currentAudioRef.current.pause();
-                 currentAudioRef.current.currentTime = 0;
-                 currentAudioRef.current.src = '';
-                 currentAudioRef.current = null;
-                 setStatus("Ready for your command, sir...");
-               }
-             }}
-             style={{ cursor: currentAudioRef.current ? 'pointer' : 'default' }}
              data-testid="jarvis-interface">
           
           {/* Ring 5 - Outermost segmented arcs with gaps */}
@@ -769,8 +785,35 @@ export default function JarvisInterface({ sessionId }: JarvisInterfaceProps) {
             {/* Additional intense glow layer */}
             <div className="absolute w-24 h-24 bg-gradient-radial from-white/20 via-cyan-400/60 to-transparent rounded-full animate-jarvis-core-pulse"></div>
             
-            {/* J.A.R.V.I.S Text - Authentic font and glow - ENHANCED LIKE ORIGINAL */}
-            <span className="relative z-10 text-white text-xl animate-jarvis-text-glow" style={{fontFamily: 'Rajdhani, Inter, system-ui, sans-serif', fontWeight: 500, letterSpacing: '0.4em'}}>
+            {/* J.A.R.V.I.S Text - Authentic font and glow - ENHANCED LIKE ORIGINAL + CLICKABLE */}
+            <span 
+              className="relative z-10 text-white text-xl animate-jarvis-text-glow cursor-pointer hover:scale-105 transition-transform duration-200" 
+              style={{fontFamily: 'Rajdhani, Inter, system-ui, sans-serif', fontWeight: 500, letterSpacing: '0.4em'}}
+              onClick={(e) => {
+                e.stopPropagation();
+                console.log('🎯 User clicked JARVIS center to interrupt/interact');
+                
+                // If JARVIS is speaking, stop immediately
+                if (currentAudioRef.current) {
+                  console.log('🛑 Stopping JARVIS via center click');
+                  currentAudioRef.current.pause();
+                  currentAudioRef.current.currentTime = 0;
+                  currentAudioRef.current.src = '';
+                  currentAudioRef.current = null;
+                  setStatus("Ready for your command, sir...");
+                  return;
+                }
+                
+                // If not in conversation mode, start listening
+                if (!conversationMode) {
+                  console.log('🎤 Starting conversation via center click');
+                  startWebSpeechRecognition();
+                } else {
+                  console.log('🛑 Stopping conversation via center click');
+                  stopWebSpeechRecognition();
+                }
+              }}
+              data-testid="jarvis-center-click">
               J.A.R.V.I.S
             </span>
           </div>
