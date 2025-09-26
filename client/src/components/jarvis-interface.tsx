@@ -20,6 +20,7 @@ export default function JarvisInterface({ sessionId }: JarvisInterfaceProps) {
   const [conversationMode, setConversationMode] = useState(false);
   const [isWaitingForResponse, setIsWaitingForResponse] = useState(false);
   const recognitionRef = useRef<any>(null);
+  const interruptRecognitionRef = useRef<any>(null);
   const currentAudioRef = useRef<HTMLAudioElement | null>(null);
   
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
@@ -370,6 +371,7 @@ export default function JarvisInterface({ sessionId }: JarvisInterfaceProps) {
         
         audio.onended = () => {
           currentAudioRef.current = null;
+          stopInterruptDetection();
           if (conversationMode) {
             setStatus("Listening, sir...");
             console.log('JARVIS finished speaking, continuing to listen...');
@@ -379,6 +381,7 @@ export default function JarvisInterface({ sessionId }: JarvisInterfaceProps) {
         };
         audio.onerror = () => {
           currentAudioRef.current = null;
+          stopInterruptDetection();
           if (conversationMode) {
             setStatus("Listening, sir...");
             console.log('Audio error, continuing to listen...');
@@ -386,8 +389,14 @@ export default function JarvisInterface({ sessionId }: JarvisInterfaceProps) {
             setStatus("Ready for your command, sir.");
           }
         };
-        audio.play().catch(() => {
+        audio.play().then(() => {
+          // Start interrupt detection while JARVIS is speaking
+          if (conversationMode) {
+            startInterruptDetection();
+          }
+        }).catch(() => {
           currentAudioRef.current = null;
+          stopInterruptDetection();
           if (conversationMode) {
             setStatus("Listening, sir...");
             console.log('Audio play failed, continuing to listen...');
@@ -577,6 +586,76 @@ export default function JarvisInterface({ sessionId }: JarvisInterfaceProps) {
     recognition.start();
   };
 
+  const startInterruptDetection = () => {
+    console.log('Starting interrupt detection during JARVIS speech');
+    
+    if (!('webkitSpeechRecognition' in window) && !('SpeechRecognition' in window)) {
+      console.log('Speech recognition not supported for interrupt detection');
+      return;
+    }
+
+    const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
+    const interruptRecognition = new SpeechRecognition();
+    
+    interruptRecognition.continuous = false;
+    interruptRecognition.interimResults = false;
+    interruptRecognition.lang = 'de-DE';
+    
+    interruptRecognition.onresult = (event: any) => {
+      const transcript = event.results[0][0].transcript.trim().toLowerCase();
+      console.log('🛑 User interrupted JARVIS:', transcript);
+      
+      // Stop JARVIS immediately
+      if (currentAudioRef.current) {
+        console.log('Stopping JARVIS due to user interrupt');
+        currentAudioRef.current.pause();
+        currentAudioRef.current.currentTime = 0;
+        currentAudioRef.current = null;
+      }
+      
+      // Process the new input
+      if (transcript.length > 2) {
+        console.log('Processing interrupt input:', transcript);
+        setIsWaitingForResponse(true);
+        jarvisMutation.mutate({ message: transcript, sessionId });
+      }
+      
+      stopInterruptDetection();
+    };
+    
+    interruptRecognition.onerror = (event: any) => {
+      console.log('Interrupt detection error:', event.error);
+      if (event.error === 'no-speech') {
+        // Continue trying to detect speech
+        setTimeout(() => {
+          if (currentAudioRef.current) {
+            startInterruptDetection();
+          }
+        }, 500);
+      }
+    };
+    
+    interruptRecognition.onend = () => {
+      // Restart interrupt detection if JARVIS is still speaking
+      if (currentAudioRef.current) {
+        setTimeout(() => {
+          startInterruptDetection();
+        }, 100);
+      }
+    };
+    
+    interruptRecognitionRef.current = interruptRecognition;
+    interruptRecognition.start();
+  };
+
+  const stopInterruptDetection = () => {
+    if (interruptRecognitionRef.current) {
+      console.log('Stopping interrupt detection');
+      interruptRecognitionRef.current.stop();
+      interruptRecognitionRef.current = null;
+    }
+  };
+
   const stopWebSpeechRecognition = () => {
     console.log('Stopping Web Speech API recognition');
     
@@ -587,6 +666,9 @@ export default function JarvisInterface({ sessionId }: JarvisInterfaceProps) {
       currentAudioRef.current.currentTime = 0;
       currentAudioRef.current = null;
     }
+    
+    // Stop interrupt detection
+    stopInterruptDetection();
     
     setConversationMode(false);
     setIsRecording(false);
