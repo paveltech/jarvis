@@ -265,6 +265,57 @@ export default function JarvisInterface({ sessionId }: JarvisInterfaceProps) {
               });
             });
             
+            // PROFESSIONAL: Widget control methods from ElevenLabs documentation
+            const setupProfessionalControls = () => {
+              if (widget) {
+                // Method to send user activity (creates 2-second pause for natural interruption)
+                (window as any).jarvisInterrupt = () => {
+                  if (widget.sendUserActivity) {
+                    console.log('🛑 Professional interruption triggered');
+                    widget.sendUserActivity();
+                    setStatus("JARVIS interrupted. Ready for your command, sir...");
+                    toast({
+                      title: "JARVIS Interrupted",
+                      description: "Voice detected - JARVIS stopped speaking.",
+                    });
+                  } else {
+                    console.log('⚠️ sendUserActivity method not available on widget');
+                  }
+                };
+                
+                // Method to end conversation completely
+                (window as any).jarvisStop = () => {
+                  if (widget.endSession) {
+                    console.log('🔚 JARVIS conversation ended manually');
+                    widget.endSession();
+                    setConversationMode(false);
+                    setStatus("JARVIS is ready.");
+                  } else {
+                    console.log('⚠️ endSession method not available on widget');
+                  }
+                };
+                
+                // Method to mute/unmute (soft interruption)
+                (window as any).jarvisMute = (muted = true) => {
+                  if (widget.setVolume) {
+                    widget.setVolume({ volume: muted ? 0 : 1 });
+                    console.log(`🔇 JARVIS ${muted ? 'muted' : 'unmuted'}`);
+                  } else {
+                    console.log('⚠️ setVolume method not available on widget');
+                  }
+                };
+                
+                // Check widget methods availability
+                console.log('🔧 Widget methods available:', {
+                  sendUserActivity: !!widget.sendUserActivity,
+                  endSession: !!widget.endSession,
+                  setVolume: !!widget.setVolume,
+                  startConversation: !!widget.startConversation
+                });
+              }
+            };
+            
+            setTimeout(setupProfessionalControls, 1000);
             console.log('✅ ElevenLabs widget fully configured for JARVIS!');
           }
         }, 2000);
