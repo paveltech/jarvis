@@ -93,7 +93,7 @@ export default function VoiceButton({
               ) : (
                 <>
                   <Mic className="w-4 h-4" />
-                  <span>Start Conversation</span>
+                  <span>Talk to JARVIS</span>
                 </>
               )
             )}

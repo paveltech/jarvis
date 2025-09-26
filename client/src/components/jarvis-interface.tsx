@@ -587,160 +587,76 @@ export default function JarvisInterface({ sessionId }: JarvisInterfaceProps) {
   };
 
   const startInterruptDetection = () => {
-    console.log('🎯 Starting smart VAD-based interrupt detection');
+    console.log('🎤 Starting JARVIS trigger word detection');
     
     if (!('webkitSpeechRecognition' in window) && !('SpeechRecognition' in window)) {
-      console.log('Speech recognition not supported for interrupt detection');
+      console.log('Speech recognition not supported for trigger word detection');
       return;
     }
 
     const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
-    const interruptRecognition = new SpeechRecognition();
+    const triggerRecognition = new SpeechRecognition();
     
-    // Smart VAD configuration
-    interruptRecognition.continuous = true;
-    interruptRecognition.interimResults = true;
-    interruptRecognition.lang = 'de-DE';
+    // Simple trigger word configuration - like Alexa
+    triggerRecognition.continuous = true;
+    triggerRecognition.interimResults = false; // Only final results to avoid false triggers
+    triggerRecognition.lang = 'de-DE';
     
-    let pauseTimeout: NodeJS.Timeout | null = null;
-    let resumePosition = 0;
-    let confidenceThreshold = 0.7; // High confidence for real interrupts
-    let energyThreshold = 0.3; // Minimum energy level to consider
-    
-    interruptRecognition.onresult = (event: any) => {
+    triggerRecognition.onresult = (event: any) => {
       const lastResult = event.results[event.results.length - 1];
       const transcript = lastResult[0].transcript.trim().toLowerCase();
       const confidence = lastResult[0].confidence;
-      const isFinal = lastResult.isFinal;
       
-      console.log(`🎤 VAD detected: "${transcript}" (confidence: ${confidence}, final: ${isFinal})`);
+      console.log(`🎧 Trigger detection: "${transcript}" (confidence: ${confidence})`);
       
-      // Smart interrupt validation
-      if (isValidInterrupt(transcript, confidence, isFinal)) {
-        console.log('✅ Valid interrupt detected - stopping JARVIS');
+      // Check for JARVIS trigger word
+      if (transcript.includes('jarvis') && confidence > 0.5) {
+        console.log('🎯 JARVIS trigger word detected! Stopping and listening...');
         
-        // Stop JARVIS immediately and remember position
+        // Stop JARVIS immediately
         if (currentAudioRef.current) {
-          resumePosition = currentAudioRef.current.currentTime;
           currentAudioRef.current.pause();
+          currentAudioRef.current.currentTime = 0;
+          currentAudioRef.current.src = '';
           currentAudioRef.current = null;
         }
         
-        // Clear any pending resume
-        if (pauseTimeout) {
-          clearTimeout(pauseTimeout);
-          pauseTimeout = null;
-        }
-        
-        // Process the valid interrupt
-        console.log('Processing valid interrupt:', transcript);
-        setIsWaitingForResponse(true);
-        jarvisMutation.mutate({ message: transcript, sessionId });
+        // Stop trigger detection
         stopInterruptDetection();
         
-      } else if (transcript.length > 2 && !isFinal) {
-        // Potential interrupt - pause briefly to check
-        console.log('⏸️ Potential interrupt - pausing briefly');
-        
-        if (currentAudioRef.current && !pauseTimeout) {
-          resumePosition = currentAudioRef.current.currentTime;
-          currentAudioRef.current.pause();
-          
-          // Resume after 1.5 seconds if no valid interrupt follows
-          pauseTimeout = setTimeout(() => {
-            console.log('❌ False alarm - resuming JARVIS');
-            resumeJarvisAudio(resumePosition);
-            pauseTimeout = null;
-          }, 1500);
-        }
+        // Switch to listening mode for the actual command
+        setStatus("Listening for your command, sir...");
+        setTimeout(() => {
+          console.log('💬 Ready for command after JARVIS trigger');
+          // Don't need to call anything here - the main recognition is still running
+        }, 500);
       }
     };
     
-    // Enhanced error handling
-    interruptRecognition.onerror = (event: any) => {
-      console.log('VAD error:', event.error);
+    triggerRecognition.onerror = (event: any) => {
+      console.log('Trigger word detection error:', event.error);
       
-      // Handle common errors gracefully
+      // Silently restart on common errors
       if (event.error === 'no-speech' || event.error === 'audio-capture') {
-        // Continue monitoring - these are expected
         setTimeout(() => {
           if (currentAudioRef.current) {
             startInterruptDetection();
           }
         }, 1000);
-      } else if (event.error === 'not-allowed') {
-        console.warn('Microphone access denied - interrupt detection disabled');
       }
     };
     
-    interruptRecognition.onend = () => {
-      // Restart if JARVIS is still speaking
+    triggerRecognition.onend = () => {
+      // Restart trigger detection if JARVIS is still speaking
       if (currentAudioRef.current) {
         setTimeout(() => {
           startInterruptDetection();
-        }, 100);
+        }, 200);
       }
     };
     
-    interruptRecognitionRef.current = interruptRecognition;
-    interruptRecognition.start();
-  };
-  
-  // Smart interrupt validation logic
-  const isValidInterrupt = (transcript: string, confidence: number, isFinal: boolean): boolean => {
-    // Rule 1: Must be final result with high confidence
-    if (!isFinal || confidence < 0.7) return false;
-    
-    // Rule 2: Must be long enough to be intentional speech
-    if (transcript.length < 4) return false;
-    
-    // Rule 3: Filter out JARVIS' own common phrases
-    const jarvisPhrases = [
-      'sir', 'wie kann ich', 'gibt es', 'möchten sie', 'kann ich ihnen',
-      'was kann ich', 'hilfe', 'behilflich', 'tony stark', 'iron man'
-    ];
-    
-    const isEcho = jarvisPhrases.some(phrase => 
-      transcript.includes(phrase.toLowerCase())
-    );
-    
-    if (isEcho) {
-      console.log('🔄 Detected echo phrase, ignoring:', transcript);
-      return false;
-    }
-    
-    // Rule 4: Check for common interrupt words
-    const interruptWords = [
-      'stopp', 'halt', 'warte', 'moment', 'jarvis', 'hey', 'nein', 
-      'stop', 'pause', 'übrigens', 'eigentlich', 'aber', 'jedoch'
-    ];
-    
-    const hasInterruptWord = interruptWords.some(word => 
-      transcript.includes(word.toLowerCase())
-    );
-    
-    if (hasInterruptWord) {
-      console.log('🛑 Strong interrupt signal detected:', transcript);
-      return true;
-    }
-    
-    // Rule 5: Question patterns indicate user input
-    const questionPatterns = ['wer ist', 'was ist', 'wie', 'warum', 'können sie', 'kannst du'];
-    const isQuestion = questionPatterns.some(pattern => 
-      transcript.includes(pattern.toLowerCase())
-    );
-    
-    return isQuestion;
-  };
-  
-  // Resume JARVIS audio from pause position
-  const resumeJarvisAudio = (position: number) => {
-    if (currentAudioRef.current && currentAudioRef.current.src) {
-      currentAudioRef.current.currentTime = position;
-      currentAudioRef.current.play().catch(err => {
-        console.log('Failed to resume audio:', err);
-      });
-    }
+    interruptRecognitionRef.current = triggerRecognition;
+    triggerRecognition.start();
   };
 
   const stopInterruptDetection = () => {
