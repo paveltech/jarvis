@@ -637,12 +637,19 @@ export default function JarvisInterface({ sessionId }: JarvisInterfaceProps) {
       if (transcript.includes('jarvis') && confidence > 0.5) {
         console.log('🎯 JARVIS trigger word detected! Stopping and listening...');
         
-        // Stop JARVIS immediately
+        // Stop JARVIS immediately and forcefully
         if (currentAudioRef.current) {
-          currentAudioRef.current.pause();
-          currentAudioRef.current.currentTime = 0;
-          currentAudioRef.current.src = '';
-          currentAudioRef.current = null;
+          console.log('🛑 Force stopping JARVIS audio immediately');
+          try {
+            currentAudioRef.current.pause();
+            currentAudioRef.current.currentTime = 0;
+            currentAudioRef.current.src = '';
+            currentAudioRef.current.load(); // Force reload to stop completely
+          } catch (e) {
+            console.log('Audio stop error:', e);
+          } finally {
+            currentAudioRef.current = null;
+          }
         }
         
         // Stop trigger detection
@@ -861,14 +868,30 @@ export default function JarvisInterface({ sessionId }: JarvisInterfaceProps) {
         </div>
       </div>
 
-      {/* Voice Visualization - Positioned near center */}
+      {/* Authentic JARVIS HUD Interface */}
       {voiceVisualizationVisible && (
-        <div className="absolute bottom-32 left-1/2 transform -translate-x-1/2 flex items-center justify-center space-x-1" data-testid="voice-visualization">
-          <div className="voice-wave" />
-          <div className="voice-wave" />
-          <div className="voice-wave" />
-          <div className="voice-wave" />
-          <div className="voice-wave" />
+        <div className="jarvis-hud" data-testid="jarvis-hud">
+          {/* Outer ring with data points */}
+          <div className="jarvis-data-points">
+            <div className="data-point"></div>
+            <div className="data-point"></div>
+            <div className="data-point"></div>
+            <div className="data-point"></div>
+            <div className="data-point"></div>
+          </div>
+          
+          {/* Animated segments */}
+          <div className="jarvis-segments"></div>
+          
+          {/* Concentric rings */}
+          <div className="jarvis-ring-3"></div>
+          <div className="jarvis-ring-2"></div>
+          <div className="jarvis-ring-1"></div>
+          
+          {/* Core with JARVIS text */}
+          <div className="jarvis-core">
+            J.A.R.V.I.S
+          </div>
         </div>
       )}
 

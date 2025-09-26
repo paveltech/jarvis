@@ -462,3 +462,210 @@ elevenlabs-convai > * {
 elevenlabs-convai::-webkit-scrollbar {
   display: none !important;
 }
+
+/* ====== AUTHENTIC JARVIS HUD INTERFACE ====== */
+.jarvis-hud {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 400px;
+  height: 400px;
+  z-index: 10;
+}
+
+.jarvis-core {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 120px;
+  height: 120px;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(0, 246, 255, 0.15) 0%, rgba(0, 150, 255, 0.05) 100%);
+  border: 2px solid #00f6ff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 14px;
+  font-weight: 600;
+  color: #00f6ff;
+  letter-spacing: 2px;
+  animation: jarvisPulse 2s ease-in-out infinite;
+  box-shadow: 
+    0 0 30px rgba(0, 246, 255, 0.5),
+    inset 0 0 20px rgba(0, 246, 255, 0.1);
+}
+
+.jarvis-ring-1 {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 180px;
+  height: 180px;
+  border-radius: 50%;
+  border: 1px solid rgba(0, 246, 255, 0.4);
+  animation: jarvisRotate 8s linear infinite;
+}
+
+.jarvis-ring-1::before {
+  content: '';
+  position: absolute;
+  top: -2px;
+  left: 50%;
+  width: 4px;
+  height: 4px;
+  background: #00f6ff;
+  border-radius: 50%;
+  box-shadow: 0 0 8px #00f6ff;
+  animation: jarvisRotate 8s linear infinite reverse;
+}
+
+.jarvis-ring-2 {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 240px;
+  height: 240px;
+  border-radius: 50%;
+  border: 1px solid rgba(0, 246, 255, 0.3);
+  animation: jarvisRotate 12s linear infinite reverse;
+}
+
+.jarvis-ring-2::before {
+  content: '';
+  position: absolute;
+  top: -1px;
+  right: 20px;
+  width: 2px;
+  height: 2px;
+  background: #00f6ff;
+  border-radius: 50%;
+  box-shadow: 0 0 6px #00f6ff;
+}
+
+.jarvis-ring-3 {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 320px;
+  height: 320px;
+  border-radius: 50%;
+  border: 1px solid rgba(0, 246, 255, 0.2);
+  animation: jarvisRotate 20s linear infinite;
+}
+
+.jarvis-ring-3::before {
+  content: '';
+  position: absolute;
+  top: 30px;
+  left: -1px;
+  width: 2px;
+  height: 2px;
+  background: #00f6ff;
+  border-radius: 50%;
+  box-shadow: 0 0 4px #00f6ff;
+}
+
+.jarvis-segments {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 280px;
+  height: 280px;
+  border-radius: 50%;
+  border: 2px solid transparent;
+  background: conic-gradient(
+    from 0deg,
+    transparent 0deg,
+    rgba(0, 246, 255, 0.6) 20deg,
+    transparent 25deg,
+    transparent 90deg,
+    rgba(0, 246, 255, 0.4) 110deg,
+    transparent 115deg,
+    transparent 180deg,
+    rgba(0, 246, 255, 0.3) 200deg,
+    transparent 205deg,
+    transparent 270deg,
+    rgba(0, 246, 255, 0.5) 290deg,
+    transparent 295deg,
+    transparent 360deg
+  );
+  border-radius: 50%;
+  animation: jarvisRotate 15s linear infinite;
+}
+
+.jarvis-data-points {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 360px;
+  height: 360px;
+}
+
+.data-point {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  background: #00f6ff;
+  border-radius: 50%;
+  box-shadow: 0 0 3px #00f6ff;
+}
+
+.data-point:nth-child(1) { top: 10px; left: 50%; animation: jarvisTwinkle 3s ease-in-out infinite; }
+.data-point:nth-child(2) { top: 50px; right: 20px; animation: jarvisTwinkle 2.5s ease-in-out infinite 0.5s; }
+.data-point:nth-child(3) { bottom: 30px; left: 30px; animation: jarvisTwinkle 3.5s ease-in-out infinite 1s; }
+.data-point:nth-child(4) { bottom: 80px; right: 50px; animation: jarvisTwinkle 2.8s ease-in-out infinite 1.5s; }
+.data-point:nth-child(5) { top: 30%; left: 10px; animation: jarvisTwinkle 3.2s ease-in-out infinite 2s; }
+
+/* JARVIS Animations */
+@keyframes jarvisPulse {
+  0%, 100% {
+    box-shadow: 
+      0 0 30px rgba(0, 246, 255, 0.5),
+      inset 0 0 20px rgba(0, 246, 255, 0.1);
+    border-color: #00f6ff;
+  }
+  50% {
+    box-shadow: 
+      0 0 50px rgba(0, 246, 255, 0.8),
+      inset 0 0 30px rgba(0, 246, 255, 0.2);
+    border-color: #00d4ff;
+  }
+}
+
+@keyframes jarvisRotate {
+  from { transform: translate(-50%, -50%) rotate(0deg); }
+  to { transform: translate(-50%, -50%) rotate(360deg); }
+}
+
+@keyframes jarvisTwinkle {
+  0%, 100% { opacity: 0.3; }
+  50% { opacity: 1; }
+}
+
+/* JARVIS Button Styling */
+.jarvis-button {
+  background: linear-gradient(135deg, rgba(0, 246, 255, 0.2) 0%, rgba(0, 150, 255, 0.1) 100%);
+  border: 2px solid #00f6ff;
+  color: #00f6ff;
+  box-shadow: 
+    0 0 20px rgba(0, 246, 255, 0.3),
+    inset 0 0 10px rgba(0, 246, 255, 0.1);
+  transition: all 0.3s ease;
+}
+
+.jarvis-button:hover {
+  background: linear-gradient(135deg, rgba(0, 246, 255, 0.3) 0%, rgba(0, 150, 255, 0.2) 100%);
+  box-shadow: 
+    0 0 30px rgba(0, 246, 255, 0.5),
+    inset 0 0 15px rgba(0, 246, 255, 0.2);
+  border-color: #00d4ff;
+  transform: translateY(-1px);
+}

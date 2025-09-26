@@ -56,10 +56,10 @@ export default function VoiceButton({
           onClick={handleClick}
           disabled={isProcessing}
           className={`
-            font-semibold py-2 px-6 rounded-full transition-all duration-300 font-mono text-sm tracking-wide
+            jarvis-button font-semibold py-2 px-6 rounded-full transition-all duration-300 font-mono text-sm tracking-wide
             ${isRecording 
-              ? 'bg-red-500/80 hover:bg-red-500 text-white border border-red-400' 
-              : 'bg-cyan-500/80 hover:bg-cyan-500 text-white border border-cyan-400 intense-glow'
+              ? 'bg-red-500/80 hover:bg-red-500 text-white border-red-400' 
+              : ''
             }
           `}
           data-testid="voice-button"
