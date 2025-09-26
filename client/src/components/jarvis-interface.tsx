@@ -663,38 +663,124 @@ export default function JarvisInterface({ sessionId }: JarvisInterfaceProps) {
       
       {/* Simple JARVIS Hub - Event-Safe Design */}
       <div className="relative flex items-center justify-center" data-testid="jarvis-hub">
-        <div 
-          className="jarvis-simple" 
-          data-testid="jarvis-interface"
-          onClick={() => {
-            if (currentAudioRef.current) {
-              console.log('🎯 User clicked to interrupt JARVIS');
-              currentAudioRef.current.pause();
-              currentAudioRef.current.currentTime = 0;
-              currentAudioRef.current.src = '';
-              currentAudioRef.current = null;
-              setStatus("Ready for your command, sir...");
-            }
-          }}
-          style={{ cursor: currentAudioRef.current ? 'pointer' : 'default' }}
-        >
-          {/* Simple concentric circles */}
-          <div className="jarvis-circle-outer"></div>
-          <div className="jarvis-circle-middle"></div>
-          <div className="jarvis-circle-inner"></div>
-
+        {/* Authentic JARVIS Interface - Based on Original Reference */}
+        <div className="relative w-96 h-96 flex items-center justify-center"
+             onClick={() => {
+               if (currentAudioRef.current) {
+                 console.log('🎯 User clicked to interrupt JARVIS');
+                 currentAudioRef.current.pause();
+                 currentAudioRef.current.currentTime = 0;
+                 currentAudioRef.current.src = '';
+                 currentAudioRef.current = null;
+                 setStatus("Ready for your command, sir...");
+               }
+             }}
+             style={{ cursor: currentAudioRef.current ? 'pointer' : 'default' }}
+             data-testid="jarvis-interface">
           
-          {/* Core with JARVIS text */}
-          <div className="jarvis-text">
-            J.A.R.V.I.S
+          {/* Ring 5 - Outermost segmented arcs with gaps */}
+          <div className="absolute w-80 h-80 top-1/2 left-1/2 jarvis-ring-rotation-slow">
+            {/* Segmented outer arcs - like in original */}
+            {Array.from({ length: 6 }, (_, i) => (
+              <div
+                key={`outer-seg-${i}`}
+                className="absolute bg-cyan-400/70 rounded-full jarvis-segment-arc"
+                style={{
+                  width: i % 2 === 0 ? '40px' : '30px',
+                  height: '3px',
+                  top: '50%',
+                  left: '50%',
+                  transformOrigin: '0px 0px',
+                  transform: `translate(-50%, -50%) rotate(${i * 60}deg) translateX(158px)`,
+                  animationDelay: `${i * 0.3}s`,
+                }}
+              />
+            ))}
           </div>
-          
-          {/* Show click hint when JARVIS is speaking */}
+
+          {/* Ring 4 - Dotted pattern ring */}
+          <div className="absolute w-72 h-72 top-1/2 left-1/2 jarvis-ring-rotation-reverse">
+            {Array.from({ length: 24 }, (_, i) => (
+              <div
+                key={`dot-${i}`}
+                className="absolute w-1 h-1 bg-cyan-400/80 rounded-full animate-pulse"
+                style={{
+                  top: '50%',
+                  left: '50%',
+                  transform: `translate(-50%, -50%) rotate(${i * 15}deg) translateX(142px)`,
+                  animationDelay: `${i * 0.1}s`,
+                }}
+              />
+            ))}
+          </div>
+
+          {/* Ring 3 - Binary Data Display (curved text like original) */}
+          <div className="absolute w-64 h-64 top-1/2 left-1/2 jarvis-ring-rotation-medium">
+            {/* Binary text segments around the ring */}
+            {Array.from({ length: 8 }, (_, segment) => {
+              const binaryText = '00000000';
+              const angleStart = segment * 45;
+              return (
+                <div
+                  key={`binary-segment-${segment}`}
+                  className="absolute text-[10px] font-mono text-cyan-400/90 font-bold tracking-wider jarvis-binary-text"
+                  style={{
+                    top: '50%',
+                    left: '50%',
+                    transform: `translate(-50%, -50%) rotate(${angleStart}deg) translateY(-125px) rotate(-${angleStart}deg)`,
+                    animationDelay: `${segment * 0.5}s`,
+                  }}
+                >
+                  {binaryText}
+                </div>
+              );
+            })}
+          </div>
+
+          {/* Ring 2 - Tick marks and measurement scales */}
+          <div className="absolute w-56 h-56 top-1/2 left-1/2 jarvis-ring-rotation-fast">
+            {Array.from({ length: 60 }, (_, i) => (
+              <div
+                key={`tick-${i}`}
+                className={`absolute bg-cyan-400/70 jarvis-tick-marks ${
+                  i % 10 === 0 ? 'w-0.5 h-4' : 
+                  i % 5 === 0 ? 'w-px h-3' : 
+                  'w-px h-2'
+                }`}
+                style={{
+                  top: i % 10 === 0 ? '-8px' : i % 5 === 0 ? '-6px' : '-4px',
+                  left: '50%',
+                  transformOrigin: '50% 112px',
+                  transform: `translateX(-50%) rotate(${i * 6}deg)`,
+                  animationDelay: `${i * 0.02}s`,
+                }}
+              />
+            ))}
+          </div>
+
+          {/* Ring 1 - Inner bright glow ring with pulsing */}
+          <div className="absolute w-40 h-40 border-2 border-cyan-400 rounded-full bg-gradient-radial from-cyan-400/30 via-cyan-400/15 to-transparent animate-jarvis-core-pulse shadow-[0_0_30px_rgba(0,255,255,0.8)]"></div>
+
+          {/* Center Core - JARVIS Text with authentic pulsing glow */}
+          <div className="absolute w-32 h-32 flex items-center justify-center bg-gradient-radial from-cyan-400/25 via-cyan-400/10 to-transparent rounded-full">
+            {/* Central background glow - stronger pulse */}
+            <div className="absolute w-28 h-28 bg-gradient-radial from-cyan-400/40 via-cyan-400/20 to-transparent rounded-full animate-jarvis-glow-breath"></div>
+            
+            {/* J.A.R.V.I.S Text - Authentic font and glow */}
+            <span className="relative z-10 text-white font-sans text-lg tracking-[0.3em] font-light animate-jarvis-text-glow">
+              J.A.R.V.I.S
+            </span>
+          </div>
+
+          {/* Click hint overlay when JARVIS is speaking */}
           {currentAudioRef.current && (
-            <div className="jarvis-click-hint">
-              Click to interrupt
+            <div className="absolute inset-0 flex items-center justify-center">
+              <div className="text-cyan-400/70 text-sm font-mono animate-pulse">
+                Click to interrupt
+              </div>
             </div>
           )}
+
         </div>
       </div>
 
