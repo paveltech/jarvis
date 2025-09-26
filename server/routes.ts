@@ -119,9 +119,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
       let audioUrl: string | undefined;
       try {
         const elevenLabsApiKey = process.env.ELEVENLABS_API_KEY || process.env.ELEVENLABS_API_KEY_ENV_VAR || "default_key";
-        // Use Antoni - built-in German male voice (perfect for JARVIS)
-        const voiceId = "ErXwobaYiN019PkySvjV"; // Antoni - built-in German male voice
-        console.log("🇩🇪 Using Antoni (German) voice for JARVIS");
+        // Use user's custom JARVIS voice
+        const voiceId = process.env.ELEVENLABS_VOICE_ID || "ErXwobaYiN019PkySvjV"; // Fallback to Antoni if no custom voice
+        console.log("🎤 Using custom JARVIS voice:", voiceId);
         
         console.log("Generating speech for response:", jarvisResponse.substring(0, 100) + "...");
         console.log("Using voice ID:", voiceId);
