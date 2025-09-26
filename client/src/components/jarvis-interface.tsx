@@ -148,7 +148,7 @@ export default function JarvisInterface({ sessionId }: JarvisInterfaceProps) {
             clientEvents: ['interruption'], // Enable client-side interruption events
             
             // CONVERSATION FLOW: Optimize for natural conversation
-            startBehaviour: 'open_mic', // Open microphone mode for continuous listening
+            startBehavior: 'open_mic', // Open microphone mode for continuous listening
             
             // CALLBACKS: Handle conversation events
             onStart: () => {
