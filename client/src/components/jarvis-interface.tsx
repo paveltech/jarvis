@@ -20,6 +20,7 @@ export default function JarvisInterface({ sessionId }: JarvisInterfaceProps) {
   const [conversationMode, setConversationMode] = useState(false);
   const [isWaitingForResponse, setIsWaitingForResponse] = useState(false);
   const recognitionRef = useRef<any>(null);
+  const currentAudioRef = useRef<HTMLAudioElement | null>(null);
   
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const audioChunksRef = useRef<Blob[]>([]);
@@ -365,22 +366,42 @@ export default function JarvisInterface({ sessionId }: JarvisInterfaceProps) {
       if (jarvisResponse.audioUrl) {
         setStatus("JARVIS is responding...");
         const audio = new Audio(jarvisResponse.audioUrl);
+        currentAudioRef.current = audio; // Store reference for stopping
+        
         audio.onended = () => {
-          setStatus("Listening, sir...");
-          // Continue listening in conversation mode
-          console.log('JARVIS finished speaking, continuing to listen...');
+          currentAudioRef.current = null;
+          if (conversationMode) {
+            setStatus("Listening, sir...");
+            console.log('JARVIS finished speaking, continuing to listen...');
+          } else {
+            setStatus("Ready for your command, sir.");
+          }
         };
         audio.onerror = () => {
-          setStatus("Listening, sir...");
-          console.log('Audio error, continuing to listen...');
+          currentAudioRef.current = null;
+          if (conversationMode) {
+            setStatus("Listening, sir...");
+            console.log('Audio error, continuing to listen...');
+          } else {
+            setStatus("Ready for your command, sir.");
+          }
         };
         audio.play().catch(() => {
-          setStatus("Listening, sir...");
-          console.log('Audio play failed, continuing to listen...');
+          currentAudioRef.current = null;
+          if (conversationMode) {
+            setStatus("Listening, sir...");
+            console.log('Audio play failed, continuing to listen...');
+          } else {
+            setStatus("Ready for your command, sir.");
+          }
         });
       } else {
-        setStatus("Listening, sir...");
-        console.log('No audio response, continuing to listen...');
+        if (conversationMode) {
+          setStatus("Listening, sir...");
+          console.log('No audio response, continuing to listen...');
+        } else {
+          setStatus("Ready for your command, sir.");
+        }
       }
     },
     onError: (error) => {
@@ -558,6 +579,15 @@ export default function JarvisInterface({ sessionId }: JarvisInterfaceProps) {
 
   const stopWebSpeechRecognition = () => {
     console.log('Stopping Web Speech API recognition');
+    
+    // Stop current audio playback immediately
+    if (currentAudioRef.current) {
+      console.log('Stopping JARVIS audio playback');
+      currentAudioRef.current.pause();
+      currentAudioRef.current.currentTime = 0;
+      currentAudioRef.current = null;
+    }
+    
     setConversationMode(false);
     setIsRecording(false);
     setVoiceVisualizationVisible(false);

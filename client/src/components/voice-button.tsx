@@ -88,7 +88,7 @@ export default function VoiceButton({
               isRecording ? (
                 <>
                   <Square className="w-4 h-4" />
-                  <span>Stop Talking</span>
+                  <span>Stop Speaking</span>
                 </>
               ) : (
                 <>
