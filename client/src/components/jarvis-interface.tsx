@@ -696,9 +696,41 @@ export default function JarvisInterface({ sessionId }: JarvisInterfaceProps) {
     }
   };
 
-  // Legacy function - now unused but kept for compatibility
+  // CRITICAL: Manual audio processing for push-to-talk Voice Button
   const processAudioInput = async (audioBlob: Blob) => {
-    console.log('processAudioInput called - this should not happen with Web Speech API');
+    console.log('🎤 Processing manual audio input (push-to-talk)');
+    setStatus("Transcribing your command...");
+    
+    try {
+      // Transcribe the audio using OpenAI Whisper
+      const transcriptionResult = await transcribeMutation.mutateAsync(audioBlob);
+      console.log('✅ Transcription successful:', transcriptionResult.text);
+      
+      if (transcriptionResult.text && transcriptionResult.text.trim()) {
+        // Send transcribed text to JARVIS
+        setStatus("JARVIS is processing your request...");
+        await jarvisMutation.mutateAsync({
+          message: transcriptionResult.text.trim(),
+          sessionId,
+        });
+      } else {
+        console.log('⚠️ Empty transcription result');
+        setStatus("Could not understand your command. Please try again.");
+        toast({
+          title: "Transcription Error",
+          description: "Could not understand your speech. Please try again.",
+          variant: "destructive",
+        });
+      }
+    } catch (error) {
+      console.error('❌ Manual audio processing failed:', error);
+      setStatus("Error processing your command. Please try again.");
+      toast({
+        title: "Processing Error",
+        description: "Failed to process your audio. Please try again.",
+        variant: "destructive",
+      });
+    }
   };
 
   const isProcessing = transcribeMutation.isPending || jarvisMutation.isPending;
