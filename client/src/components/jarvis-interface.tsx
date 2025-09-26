@@ -156,9 +156,15 @@ export default function JarvisInterface({ sessionId }: JarvisInterfaceProps) {
             // Create the widget element
             const widget = document.createElement('elevenlabs-convai') as any;
             
-            // Configure the widget with your credentials
-            widget.setAttribute('agent-id', 'your-conversational-agent-id'); // You'll need to configure this
-            widget.setAttribute('public-user-id', 'jarvis-user');
+            // Configure the widget with user's ElevenLabs credentials
+            // For now using environment variable, user can set this in their .env
+            const agentId = import.meta.env.VITE_ELEVENLABS_AGENT_ID || 'demo-agent-id';
+            widget.setAttribute('agent-id', agentId);
+            widget.setAttribute('public-user-id', `jarvis-user-${sessionId}`);
+            
+            // Additional widget configuration for JARVIS
+            widget.setAttribute('conversation-mode', 'voice');
+            widget.setAttribute('auto-start', 'false'); // Manual control
             
             // Style the widget to be invisible but functional
             widget.style.width = '120px';
