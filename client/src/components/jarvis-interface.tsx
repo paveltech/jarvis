@@ -577,9 +577,12 @@ export default function JarvisInterface({ sessionId }: JarvisInterfaceProps) {
       const transcript = event.results[event.results.length - 1][0].transcript.toLowerCase().trim();
       console.log('Web Speech API transcribed:', transcript);
       
-      // Check for voice commands first
-      if (transcript.includes('jarvis') || transcript.includes('stop') || transcript.includes('stopp')) {
-        console.log('🎯 Voice command detected:', transcript);
+      // Check for SPECIFIC voice commands only (not normal conversation)
+      const isJustJarvis = transcript === 'jarvis' || transcript === 'hey jarvis';
+      const isStopCommand = transcript === 'stop' || transcript === 'stopp' || transcript === 'halt';
+      
+      if (isJustJarvis || isStopCommand) {
+        console.log('🎯 Specific voice command detected:', transcript);
         
         // Stop JARVIS immediately
         if (currentAudioRef.current) {
