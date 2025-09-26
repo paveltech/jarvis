@@ -577,23 +577,33 @@ export default function JarvisInterface({ sessionId }: JarvisInterfaceProps) {
       const transcript = event.results[event.results.length - 1][0].transcript.toLowerCase().trim();
       console.log('Web Speech API transcribed:', transcript);
       
-      // Check for SPECIFIC voice commands only (not normal conversation)
-      const isJustJarvis = transcript === 'jarvis' || transcript === 'hey jarvis';
-      const isStopCommand = transcript === 'stop' || transcript === 'stopp' || transcript === 'halt';
+      // Check for voice commands that indicate interruption intent
+      const containsJarvis = transcript.includes('jarvis') && (
+        transcript.includes('stopp') || transcript.includes('stop') || transcript.includes('halt') ||
+        transcript.includes('still') || transcript.includes('ruhe') || transcript.includes('pause')
+      );
+      const isDirectStop = transcript.includes('stop') || transcript.includes('stopp') || 
+                          transcript.includes('halt') || transcript.includes('still') || 
+                          transcript.includes('ruhe') || transcript.includes('pause');
       
-      if (isJustJarvis || isStopCommand) {
-        console.log('🎯 Specific voice command detected:', transcript);
+      // ONLY interrupt if user clearly wants to stop/interrupt
+      if (containsJarvis || isDirectStop) {
+        console.log('🛑 INTERRUPTION COMMAND detected:', transcript);
         
         // Stop JARVIS immediately
         if (currentAudioRef.current) {
-          console.log('🛑 Stopping JARVIS via voice command');
+          console.log('🔇 Force stopping JARVIS audio via voice command');
           currentAudioRef.current.pause();
           currentAudioRef.current.currentTime = 0;
           currentAudioRef.current.src = '';
           currentAudioRef.current = null;
         }
         
-        setStatus("Ready for your command, sir...");
+        setStatus("JARVIS interrupted. Ready for your command, sir...");
+        toast({
+          title: "JARVIS Interrupted",
+          description: "Voice command detected. JARVIS is now listening.",
+        });
         return; // Don't send to JARVIS API
       }
       
