@@ -143,7 +143,36 @@ export default function JarvisInterface({ sessionId }: JarvisInterfaceProps) {
           const widget = (window as any).ConvaiUI({
             agentId: 'agent_0601k62vhrxafx98s1k6zshc6n7t', // Your JARVIS Agent ID
             apiKey: undefined, // No client-side API key needed
-            // Additional config for barge-in etc.
+            
+            // BARGE-IN: Enable interruption support (based on config docs)
+            clientEvents: ['interruption'], // Enable client-side interruption events
+            
+            // CONVERSATION FLOW: Optimize for natural conversation
+            startBehaviour: 'open_mic', // Open microphone mode for continuous listening
+            
+            // CALLBACKS: Handle conversation events
+            onStart: () => {
+              console.log('🎯 ElevenLabs conversation started');
+              setConversationMode(true);
+              setStatus('JARVIS is listening via ElevenLabs...');
+            },
+            
+            onEnd: () => {
+              console.log('🛑 ElevenLabs conversation ended');
+              setConversationMode(false);
+              setStatus('Ready for your command, sir.');
+            },
+            
+            onError: (error: any) => {
+              console.error('ElevenLabs conversation error:', error);
+              setStatus('ElevenLabs error - switching to Web Speech fallback');
+              startWebSpeechFallback();
+            },
+            
+            onInterruption: () => {
+              console.log('🛑 ElevenLabs interruption detected');
+              setStatus('JARVIS interrupted via ElevenLabs...');
+            }
           });
           
           // Store widget reference for interruption
