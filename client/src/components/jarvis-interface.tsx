@@ -625,19 +625,31 @@ export default function JarvisInterface({ sessionId }: JarvisInterfaceProps) {
 
   // SIMPLIFIED Web Speech API - Backup for ElevenLabs Widget
   const startWebSpeechRecognition = () => {
-    // Check if ElevenLabs widget is available first
-    const widget = document.querySelector('elevenlabs-convai') as any;
-    if (widget) {
-      console.log('🎯 ElevenLabs widget available - using it instead of custom recognition');
-      if (widget.startConversation) {
-        widget.startConversation();
-        setConversationMode(true);
-        setStatus("JARVIS is listening, sir...");
+    // Give widget more time to initialize and check multiple ways
+    setTimeout(() => {
+      const widget = document.querySelector('elevenlabs-convai') as any;
+      const widgetInContainer = document.querySelector('#elevenlabs-widget-container elevenlabs-convai') as any;
+      const activeWidget = widget || widgetInContainer;
+      
+      if (activeWidget) {
+        console.log('🎯 ElevenLabs widget found - starting natural conversation');
+        if (activeWidget.startConversation) {
+          activeWidget.startConversation();
+          setConversationMode(true);
+          setStatus("JARVIS is listening, sir...");
+          return;
+        } else {
+          console.log('🔧 Widget found but startConversation method not available');
+        }
+      } else {
+        console.log('📢 ElevenLabs widget still not available - using Web Speech fallback');
+        startWebSpeechFallback();
       }
-      return;
-    }
+    }, 500);
+  };
 
-    console.log('📢 ElevenLabs widget not available - using simple Web Speech fallback');
+  const startWebSpeechFallback = () => {
+    console.log('🔄 Starting Web Speech API fallback with continuous recognition');
     
     if (!('webkitSpeechRecognition' in window) && !('SpeechRecognition' in window)) {
       toast({
@@ -651,8 +663,9 @@ export default function JarvisInterface({ sessionId }: JarvisInterfaceProps) {
     const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
     const recognition = new SpeechRecognition();
     
-    recognition.continuous = false; // Simpler: one-shot recognition
-    recognition.interimResults = false;
+    // Enhanced for better interruption detection
+    recognition.continuous = true; // Continuous listening for interruption
+    recognition.interimResults = true; // Catch interruptions faster
     recognition.lang = 'de-DE';
     recognition.maxAlternatives = 1;
 
@@ -661,43 +674,73 @@ export default function JarvisInterface({ sessionId }: JarvisInterfaceProps) {
     recognition.onstart = () => {
       setIsRecording(true);
       setVoiceVisualizationVisible(true);
-      setStatus("Speak your command, sir...");
-      console.log('⚡ Simple recognition started (fallback mode)');
+      setConversationMode(true);
+      setStatus("JARVIS is listening, sir...");
+      console.log('⚡ Enhanced Web Speech started with interruption detection');
     };
 
     recognition.onresult = async (event: any) => {
-      const transcript = event.results[0][0].transcript.trim();
-      console.log('🎤 Simple recognition captured:', transcript);
+      const lastResult = event.results[event.results.length - 1];
+      const transcript = lastResult[0].transcript.toLowerCase().trim();
       
-      setStatus("JARVIS is processing your request...");
-
-      try {
-        await jarvisMutation.mutateAsync({
-          message: transcript,
-          sessionId,
-        });
-      } catch (error) {
-        console.error('Error sending to JARVIS:', error);
-        setStatus("Error processing request. Please try again.");
+      // If JARVIS is speaking and user speaks, interrupt immediately
+      if (currentAudioRef.current && transcript.length > 3) {
+        console.log('🛑 USER INTERRUPTION detected while JARVIS speaking:', transcript);
+        currentAudioRef.current.pause();
+        currentAudioRef.current.currentTime = 0;
+        currentAudioRef.current.src = '';
+        currentAudioRef.current = null;
+        setStatus("JARVIS interrupted. Ready for your command, sir...");
         toast({
-          title: "JARVIS Error", 
-          description: "Failed to process your request. Please try again.",
-          variant: "destructive",
+          title: "JARVIS Interrupted",
+          description: "Voice detected - JARVIS stopped speaking.",
         });
+      }
+      
+      // Only process final results
+      if (lastResult.isFinal) {
+        console.log('🎤 Final transcript:', transcript);
+        setStatus("JARVIS is processing your request...");
+
+        try {
+          await jarvisMutation.mutateAsync({
+            message: transcript,
+            sessionId,
+          });
+        } catch (error) {
+          console.error('Error sending to JARVIS:', error);
+          setStatus("Error processing request. Please try again.");
+        }
+      } else {
+        console.log('🎙️ Interim result:', transcript);
       }
     };
 
     recognition.onerror = (event: any) => {
-      console.error('Simple recognition error:', event.error);
-      setIsRecording(false);
-      setVoiceVisualizationVisible(false);
-      setStatus("Speech recognition error. Please try again.");
+      console.error('Enhanced recognition error:', event.error);
+      if (event.error !== 'no-speech') {
+        setStatus("Speech recognition error. Please try again.");
+      }
     };
 
     recognition.onend = () => {
-      console.log('Simple recognition ended');
-      setIsRecording(false);
-      setVoiceVisualizationVisible(false);
+      console.log('Enhanced recognition ended');
+      // Restart if still in conversation mode
+      if (conversationMode && !jarvisMutation.isPending) {
+        setTimeout(() => {
+          if (conversationMode && recognitionRef.current) {
+            console.log('🔄 Restarting enhanced recognition...');
+            try {
+              recognitionRef.current.start();
+            } catch (error) {
+              console.log('Recognition restart error:', error);
+            }
+          }
+        }, 1000);
+      } else {
+        setIsRecording(false);
+        setVoiceVisualizationVisible(false);
+      }
     };
 
     recognition.start();
