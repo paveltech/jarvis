@@ -102,254 +102,69 @@ export default function JarvisInterface({ sessionId }: JarvisInterfaceProps) {
     return arrayBuffer;
   };
 
-  // CORRECT 2024 ElevenLabs Widget Implementation
+  // ElevenLabs Widget Integration for Production
   useEffect(() => {
-    console.log('🚀 Loading CORRECT 2024 ElevenLabs conversational agent...');
+    console.log('🎯 Loading ElevenLabs conversational agent for PRODUCTION...');
     
-    const loadElevenLabsWidget = async () => {
+    const loadWidget = async () => {
       try {
-        // Check if script already exists (with new URL)
-        const existingScript = document.querySelector('script[src*="conversational-ai/widget.js"]');
-        if (existingScript) {
-          console.log('✅ ElevenLabs CORRECT script already loaded');
+        // Only load on production domain (not localhost/dev)
+        if (window.location.hostname.includes('localhost') || window.location.hostname.includes('127.0.0.1')) {
+          console.log('⚠️ Skipping ElevenLabs widget on development - use published URL');
           return;
         }
-
+        
         const script = document.createElement('script');
         script.src = 'https://elevenlabs.io/conversational-ai/widget.js';
         script.setAttribute('data-agent-id', 'agent_0601k62vhrxafx98s1k6zshc6n7t');
         script.async = true;
         
-        const scriptLoaded = new Promise((resolve, reject) => {
-          script.onload = () => {
-            console.log('ElevenLabs script loaded successfully');
-            resolve(true);
-          };
-          script.onerror = (error) => {
-            console.error('ElevenLabs script failed to load:', error);
-            reject(error);
-          };
-        });
-
-        document.body.appendChild(script);
-        await scriptLoaded;
+        script.onload = () => {
+          console.log('✅ ElevenLabs script loaded successfully');
+          initializeWidget();
+        };
         
-        // Set up widget event listeners after script loads with longer delay
-        setTimeout(setupWidgetEventListeners, 1000);
+        script.onerror = () => {
+          console.log('⚠️ ElevenLabs script failed to load - fallback to Web Speech API');
+        };
         
+        document.head.appendChild(script);
       } catch (error) {
-        console.error('Error loading ElevenLabs widget:', error);
+        console.error('ElevenLabs loading error:', error);
+      }
+    };
+    
+    const initializeWidget = () => {
+      const container = document.getElementById('elevenlabs-widget-container');
+      if (container) {
+        container.innerHTML = '<div id="elevenlabs-audionative"></div>';
+        console.log('✅ ElevenLabs widget container ready');
       }
     };
 
-    const setupWidgetEventListeners = () => {
-      // Wait for the widget to be defined
-      customElements.whenDefined('elevenlabs-convai').then(() => {
-        console.log('ElevenLabs widget defined, setting up JARVIS conversation integration...');
-        
-        // CREATE and CONFIGURE the actual widget
-        setTimeout(() => {
-          const container = document.getElementById('elevenlabs-widget-container');
-          if (container && !container.querySelector('elevenlabs-convai')) {
-            console.log('🎯 Creating ElevenLabs Conversational Agent widget...');
-            
-            // Create the widget element
-            const widget = document.createElement('elevenlabs-convai') as any;
-            
-            // Configure the widget with the correct Agent ID from user
-            widget.setAttribute('agent-id', 'agent_0601k62vhrxafx98s1k6zshc6n7t');
-            widget.setAttribute('public-user-id', `jarvis-user-${sessionId}`);
-            
-            // PROFESSIONAL: Widget configuration from ElevenLabs documentation
-            widget.setAttribute('avatar', 'false'); // No avatar for JARVIS UI
-            widget.setAttribute('chat-mode', 'false'); // Voice only
-            widget.setAttribute('interruptions-enabled', 'true'); // CRITICAL for interruption!
-            widget.setAttribute('quick-connect', 'true'); // Faster connection
-            
-            // Style the widget to be invisible but functional
-            widget.style.width = '120px';
-            widget.style.height = '120px';
-            widget.style.opacity = '0';
-            widget.style.pointerEvents = 'auto';
-            widget.style.position = 'absolute';
-            widget.style.top = '50%';
-            widget.style.left = '50%';
-            widget.style.transform = 'translate(-50%, -50%)';
-            
-            container.appendChild(widget);
-            
-            // Set up comprehensive event listeners for natural conversation
-            const eventTypes = [
-              'conversation-started',
-              'conversation-ended', 
-              'user-speaking-started',
-              'user-speaking-ended',
-              'agent-speaking-started',
-              'agent-speaking-ended',
-              'user-transcript',
-              'agent-response'
-            ];
-            
-            eventTypes.forEach(eventType => {
-              widget.addEventListener(eventType, (event: Event) => {
-                const customEvent = event as CustomEvent;
-                console.log(`🎯 ElevenLabs ${eventType}:`, customEvent.detail);
-                
-                // Handle different event types with JARVIS visual integration
-                switch(eventType) {
-                  case 'conversation-started':
-                    console.log('✅ ElevenLabs conversation started - JARVIS is active');
-                    setConversationMode(true);
-                    setIsRecording(true);
-                    setVoiceVisualizationVisible(true);
-                    setStatus("JARVIS is listening, sir...");
-                    toast({
-                      title: "JARVIS Activated",
-                      description: "Voice conversation started. Speak naturally, JARVIS will respond.",
-                    });
-                    break;
-                    
-                  case 'conversation-ended':
-                    console.log('⏹️ ElevenLabs conversation ended - JARVIS is ready');
-                    setConversationMode(false);
-                    setIsRecording(false);
-                    setVoiceVisualizationVisible(false);
-                    setStatus("Ready for your command, sir...");
-                    break;
-                    
-                  case 'user-speaking-started':
-                    console.log('🎤 User started speaking to JARVIS');
-                    setIsRecording(true);
-                    setStatus("Recording your command...");
-                    break;
-                    
-                  case 'user-speaking-ended':
-                    console.log('🔇 User finished speaking');
-                    setIsRecording(false);
-                    setStatus("Processing with JARVIS...");
-                    break;
-                    
-                  case 'agent-speaking-started':
-                    console.log('🗣️ JARVIS started speaking - interruption naturally supported');
-                    setIsWaitingForResponse(true);
-                    setStatus("JARVIS is responding...");
-                    // ElevenLabs handles interruption automatically!
-                    break;
-                    
-                  case 'agent-speaking-ended':
-                    console.log('✅ JARVIS finished speaking');
-                    setIsWaitingForResponse(false);
-                    setStatus("JARVIS is listening, sir...");
-                    break;
-                    
-                  case 'user-transcript':
-                    const userMessage = customEvent.detail?.transcript || customEvent.detail?.text;
-                    if (userMessage) {
-                      console.log('📝 User transcript captured:', userMessage);
-                      setStatus("JARVIS is processing your request...");
-                      
-                      // Send to n8n workflow for JARVIS intelligence
-                      jarvisMutation.mutate({ 
-                        message: userMessage, 
-                        sessionId: sessionId 
-                      });
-                    }
-                    break;
-                    
-                  case 'agent-response':
-                    const agentMessage = customEvent.detail?.response || customEvent.detail?.text;
-                    if (agentMessage) {
-                      console.log('🤖 JARVIS natural response:', agentMessage);
-                      // ElevenLabs handles voice synthesis automatically
-                    }
-                    break;
-                }
-              });
-            });
-            
-            // PROFESSIONAL: Wait for widget ready event and controller - ElevenLabs Documentation Method
-            widget.addEventListener('ready', () => {
-              console.log('🎯 ElevenLabs widget is ready - setting up professional controls');
-              
-              // Access the controller object from the widget (documented method)
-              const controller = widget.controller;
-              
-              if (controller) {
-                console.log('✅ ElevenLabs controller available - setting up interruption methods');
-                
-                // Professional interruption method using controller
-                (window as any).jarvisInterrupt = () => {
-                  if (controller.sendUserActivity) {
-                    console.log('🛑 Professional interruption triggered via controller');
-                    controller.sendUserActivity();
-                    setStatus("JARVIS interrupted. Ready for your command, sir...");
-                    toast({
-                      title: "JARVIS Interrupted",
-                      description: "Voice detected - JARVIS stopped speaking.",
-                    });
-                  } else {
-                    console.log('⚠️ sendUserActivity method not available on controller');
-                  }
-                };
-                
-                // End conversation method using controller
-                (window as any).jarvisStop = () => {
-                  if (controller.endSession) {
-                    console.log('🔚 JARVIS conversation ended via controller');
-                    controller.endSession();
-                    setConversationMode(false);
-                    setStatus("JARVIS is ready.");
-                  } else {
-                    console.log('⚠️ endSession method not available on controller');
-                  }
-                };
-                
-                // Volume control using controller
-                (window as any).jarvisMute = (muted = true) => {
-                  if (controller.setVolume) {
-                    controller.setVolume({ volume: muted ? 0 : 1 });
-                    console.log(`🔇 JARVIS ${muted ? 'muted' : 'unmuted'} via controller`);
-                  } else {
-                    console.log('⚠️ setVolume method not available on controller');
-                  }
-                };
-                
-                // Store controller reference for later use
-                (window as any).jarvisController = controller;
-                
-                // Log available controller methods
-                console.log('🔧 Controller methods available:', {
-                  sendUserActivity: !!controller.sendUserActivity,
-                  endSession: !!controller.endSession,
-                  setVolume: !!controller.setVolume,
-                  startConversation: !!controller.startConversation
-                });
-              } else {
-                console.log('⚠️ Controller not available on widget - using widget methods as fallback');
-                // Fallback to widget methods if controller is not available
-                (window as any).jarvisInterrupt = () => {
-                  if (widget.sendUserActivity) {
-                    widget.sendUserActivity();
-                    setStatus("JARVIS interrupted. Ready for your command, sir...");
-                  }
-                };
-              }
-            });
-            console.log('✅ ElevenLabs widget fully configured for JARVIS!');
-          }
-        }, 2000);
-      }).catch(error => {
-        console.error('Error setting up ElevenLabs widget:', error);
-      });
-    };
-
-    loadElevenLabsWidget();
+    loadWidget();
     
     return () => {
       console.log('ElevenLabs widget cleaned up');
     };
+  }, [sessionId]);
 
-    // Add global error handler to catch any uncaught exceptions
+  // Enhanced voice interruption detection
+  const handleVoiceInterruption = () => {
+    if (currentAudioRef.current) {
+      currentAudioRef.current.pause();
+      currentAudioRef.current = null;
+      setStatus("JARVIS interrupted. Ready for your command, sir...");
+      
+      // Call ElevenLabs interrupt if available
+      if ((window as any).jarvisInterrupt) {
+        (window as any).jarvisInterrupt();
+      }
+    }
+  };
+
+  // Global error handling for ElevenLabs
+  useEffect(() => {
     const handleGlobalError = (event: ErrorEvent) => {
       console.log('Global error event details:', {
         message: event.message,
@@ -461,11 +276,6 @@ export default function JarvisInterface({ sessionId }: JarvisInterfaceProps) {
       // Cleanup event listeners
       window.removeEventListener('error', handleGlobalError, true);
       window.removeEventListener('unhandledrejection', handleUnhandledRejection, true);
-      
-      const script = document.querySelector('script[src*="convai-widget-embed"]');
-      if (script && document.body.contains(script)) {
-        document.body.removeChild(script);
-      }
     };
   }, []);
 
