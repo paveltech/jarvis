@@ -160,9 +160,11 @@ export default function JarvisInterface({ sessionId }: JarvisInterfaceProps) {
             widget.setAttribute('agent-id', 'agent_0601k62vhrxafx98s1k6zshc6n7t');
             widget.setAttribute('public-user-id', `jarvis-user-${sessionId}`);
             
-            // Additional widget configuration for JARVIS
-            widget.setAttribute('conversation-mode', 'voice');
-            widget.setAttribute('auto-start', 'false'); // Manual control
+            // PROFESSIONAL: Widget configuration from ElevenLabs documentation
+            widget.setAttribute('avatar', 'false'); // No avatar for JARVIS UI
+            widget.setAttribute('chat-mode', 'false'); // Voice only
+            widget.setAttribute('interruptions-enabled', 'true'); // CRITICAL for interruption!
+            widget.setAttribute('quick-connect', 'true'); // Faster connection
             
             // Style the widget to be invisible but functional
             widget.style.width = '120px';
@@ -265,57 +267,74 @@ export default function JarvisInterface({ sessionId }: JarvisInterfaceProps) {
               });
             });
             
-            // PROFESSIONAL: Widget control methods from ElevenLabs documentation
-            const setupProfessionalControls = () => {
-              if (widget) {
-                // Method to send user activity (creates 2-second pause for natural interruption)
+            // PROFESSIONAL: Wait for widget ready event and controller - ElevenLabs Documentation Method
+            widget.addEventListener('ready', () => {
+              console.log('🎯 ElevenLabs widget is ready - setting up professional controls');
+              
+              // Access the controller object from the widget (documented method)
+              const controller = widget.controller;
+              
+              if (controller) {
+                console.log('✅ ElevenLabs controller available - setting up interruption methods');
+                
+                // Professional interruption method using controller
                 (window as any).jarvisInterrupt = () => {
-                  if (widget.sendUserActivity) {
-                    console.log('🛑 Professional interruption triggered');
-                    widget.sendUserActivity();
+                  if (controller.sendUserActivity) {
+                    console.log('🛑 Professional interruption triggered via controller');
+                    controller.sendUserActivity();
                     setStatus("JARVIS interrupted. Ready for your command, sir...");
                     toast({
                       title: "JARVIS Interrupted",
                       description: "Voice detected - JARVIS stopped speaking.",
                     });
                   } else {
-                    console.log('⚠️ sendUserActivity method not available on widget');
+                    console.log('⚠️ sendUserActivity method not available on controller');
                   }
                 };
                 
-                // Method to end conversation completely
+                // End conversation method using controller
                 (window as any).jarvisStop = () => {
-                  if (widget.endSession) {
-                    console.log('🔚 JARVIS conversation ended manually');
-                    widget.endSession();
+                  if (controller.endSession) {
+                    console.log('🔚 JARVIS conversation ended via controller');
+                    controller.endSession();
                     setConversationMode(false);
                     setStatus("JARVIS is ready.");
                   } else {
-                    console.log('⚠️ endSession method not available on widget');
+                    console.log('⚠️ endSession method not available on controller');
                   }
                 };
                 
-                // Method to mute/unmute (soft interruption)
+                // Volume control using controller
                 (window as any).jarvisMute = (muted = true) => {
-                  if (widget.setVolume) {
-                    widget.setVolume({ volume: muted ? 0 : 1 });
-                    console.log(`🔇 JARVIS ${muted ? 'muted' : 'unmuted'}`);
+                  if (controller.setVolume) {
+                    controller.setVolume({ volume: muted ? 0 : 1 });
+                    console.log(`🔇 JARVIS ${muted ? 'muted' : 'unmuted'} via controller`);
                   } else {
-                    console.log('⚠️ setVolume method not available on widget');
+                    console.log('⚠️ setVolume method not available on controller');
                   }
                 };
                 
-                // Check widget methods availability
-                console.log('🔧 Widget methods available:', {
-                  sendUserActivity: !!widget.sendUserActivity,
-                  endSession: !!widget.endSession,
-                  setVolume: !!widget.setVolume,
-                  startConversation: !!widget.startConversation
+                // Store controller reference for later use
+                (window as any).jarvisController = controller;
+                
+                // Log available controller methods
+                console.log('🔧 Controller methods available:', {
+                  sendUserActivity: !!controller.sendUserActivity,
+                  endSession: !!controller.endSession,
+                  setVolume: !!controller.setVolume,
+                  startConversation: !!controller.startConversation
                 });
+              } else {
+                console.log('⚠️ Controller not available on widget - using widget methods as fallback');
+                // Fallback to widget methods if controller is not available
+                (window as any).jarvisInterrupt = () => {
+                  if (widget.sendUserActivity) {
+                    widget.sendUserActivity();
+                    setStatus("JARVIS interrupted. Ready for your command, sir...");
+                  }
+                };
               }
-            };
-            
-            setTimeout(setupProfessionalControls, 1000);
+            });
             console.log('✅ ElevenLabs widget fully configured for JARVIS!');
           }
         }, 2000);
@@ -674,28 +693,43 @@ export default function JarvisInterface({ sessionId }: JarvisInterfaceProps) {
     }
   };
 
-  // SIMPLIFIED Web Speech API - Backup for ElevenLabs Widget
+  // PROFESSIONAL: ElevenLabs Controller-First Approach
   const startWebSpeechRecognition = () => {
-    // Give widget more time to initialize and check multiple ways
+    // Check for ElevenLabs controller first (professional method)
+    const controller = (window as any).jarvisController;
+    
+    if (controller && controller.startConversation) {
+      console.log('🎯 Using ElevenLabs controller for natural conversation');
+      try {
+        controller.startConversation();
+        setConversationMode(true);
+        setStatus("JARVIS is listening, sir...");
+        return;
+      } catch (error) {
+        console.log('⚠️ ElevenLabs controller failed, falling back:', error);
+      }
+    }
+    
+    // Fallback: Check widget directly
     setTimeout(() => {
       const widget = document.querySelector('elevenlabs-convai') as any;
       const widgetInContainer = document.querySelector('#elevenlabs-widget-container elevenlabs-convai') as any;
       const activeWidget = widget || widgetInContainer;
       
-      if (activeWidget) {
-        console.log('🎯 ElevenLabs widget found - starting natural conversation');
-        if (activeWidget.startConversation) {
+      if (activeWidget && activeWidget.startConversation) {
+        console.log('🎯 ElevenLabs widget found - starting conversation via widget');
+        try {
           activeWidget.startConversation();
           setConversationMode(true);
           setStatus("JARVIS is listening, sir...");
           return;
-        } else {
-          console.log('🔧 Widget found but startConversation method not available');
+        } catch (error) {
+          console.log('⚠️ Widget startConversation failed:', error);
         }
-      } else {
-        console.log('📢 ElevenLabs widget still not available - using Web Speech fallback');
-        startWebSpeechFallback();
       }
+      
+      console.log('📢 ElevenLabs not available - using enhanced Web Speech fallback');
+      startWebSpeechFallback();
     }, 500);
   };
 
