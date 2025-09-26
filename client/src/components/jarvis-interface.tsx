@@ -19,6 +19,7 @@ export default function JarvisInterface({ sessionId }: JarvisInterfaceProps) {
   const [showConversationalAI, setShowConversationalAI] = useState(false);
   const [conversationMode, setConversationMode] = useState(false);
   const [isWaitingForResponse, setIsWaitingForResponse] = useState(false);
+  const recognitionRef = useRef<any>(null);
   
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const audioChunksRef = useRef<Blob[]>([]);
@@ -365,52 +366,21 @@ export default function JarvisInterface({ sessionId }: JarvisInterfaceProps) {
         setStatus("JARVIS is responding...");
         const audio = new Audio(jarvisResponse.audioUrl);
         audio.onended = () => {
-          setStatus("Ready for your command, sir");
-          // If in conversation mode, automatically start listening for next input
-          if (conversationMode) {
-            setTimeout(() => {
-              if (conversationMode && !isRecording) {
-                console.log('Auto-starting next voice input in conversation mode');
-                startRecording();
-              }
-            }, 1000); // Small delay to let user process the response
-          }
+          setStatus("Listening, sir...");
+          // Continue listening in conversation mode
+          console.log('JARVIS finished speaking, continuing to listen...');
         };
         audio.onerror = () => {
-          setStatus("Ready for your command, sir");
-          // If in conversation mode, automatically start listening for next input
-          if (conversationMode) {
-            setTimeout(() => {
-              if (conversationMode && !isRecording) {
-                console.log('Auto-starting next voice input in conversation mode (audio error)');
-                startRecording();
-              }
-            }, 1000);
-          }
+          setStatus("Listening, sir...");
+          console.log('Audio error, continuing to listen...');
         };
         audio.play().catch(() => {
-          setStatus("Ready for your command, sir");
-          // If in conversation mode, automatically start listening for next input
-          if (conversationMode) {
-            setTimeout(() => {
-              if (conversationMode && !isRecording) {
-                console.log('Auto-starting next voice input in conversation mode (audio play error)');
-                startRecording();
-              }
-            }, 1000);
-          }
+          setStatus("Listening, sir...");
+          console.log('Audio play failed, continuing to listen...');
         });
       } else {
-        setStatus("Ready for your command, sir");
-        // If in conversation mode, automatically start listening for next input
-        if (conversationMode) {
-          setTimeout(() => {
-            if (conversationMode && !isRecording) {
-              console.log('Auto-starting next voice input in conversation mode (no audio)');
-              startRecording();
-            }
-          }, 1000);
-        }
+        setStatus("Listening, sir...");
+        console.log('No audio response, continuing to listen...');
       }
     },
     onError: (error) => {
@@ -505,7 +475,7 @@ export default function JarvisInterface({ sessionId }: JarvisInterfaceProps) {
     }
   };
 
-  // Web Speech API - Real-time browser-based speech recognition (no server needed!)
+  // Web Speech API - Continuous conversation mode
   const startWebSpeechRecognition = () => {
     if (!('webkitSpeechRecognition' in window) && !('SpeechRecognition' in window)) {
       toast({
@@ -519,28 +489,30 @@ export default function JarvisInterface({ sessionId }: JarvisInterfaceProps) {
     const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
     const recognition = new SpeechRecognition();
     
-    recognition.continuous = false;
+    recognition.continuous = true; // Enable continuous listening
     recognition.interimResults = false;
     recognition.lang = 'de-DE'; // German language for JARVIS
     recognition.maxAlternatives = 1;
 
+    recognitionRef.current = recognition;
+
     recognition.onstart = () => {
       setIsRecording(true);
       setVoiceVisualizationVisible(true);
+      setConversationMode(true);
       setStatus("Listening, sir...");
-      console.log('Web Speech API: Recognition started');
+      console.log('Web Speech API: Continuous recognition started');
     };
 
     recognition.onresult = async (event: any) => {
-      const transcript = event.results[0][0].transcript;
+      const transcript = event.results[event.results.length - 1][0].transcript;
       console.log('Web Speech API transcribed:', transcript);
       
-      setIsRecording(false);
-      setVoiceVisualizationVisible(false);
+      // Temporarily pause listening while processing
       setStatus("JARVIS is processing your request...");
 
       try {
-        // Send directly to JARVIS without server-side transcription
+        // Send directly to JARVIS
         await jarvisMutation.mutateAsync({
           message: transcript,
           sessionId,
@@ -558,17 +530,8 @@ export default function JarvisInterface({ sessionId }: JarvisInterfaceProps) {
 
     recognition.onerror = (event: any) => {
       console.error('Web Speech API error:', event.error);
-      setIsRecording(false);
-      setVoiceVisualizationVisible(false);
-      setStatus("Speech recognition error. Please try again.");
-      
-      if (event.error === 'no-speech') {
-        toast({
-          title: "No Speech Detected",
-          description: "Please speak clearly and try again.",
-          variant: "destructive",
-        });
-      } else {
+      if (event.error !== 'no-speech') {
+        setStatus("Speech recognition error. Please try again.");
         toast({
           title: "Speech Recognition Error",
           description: `Error: ${event.error}. Please try again.`,
@@ -579,16 +542,31 @@ export default function JarvisInterface({ sessionId }: JarvisInterfaceProps) {
 
     recognition.onend = () => {
       console.log('Web Speech API recognition ended');
-      if (!jarvisMutation.isPending) {
-        setIsRecording(false);
-        setVoiceVisualizationVisible(false);
-        if (status === "Listening, sir...") {
-          setStatus("Ready for your command, sir.");
-        }
+      // Only restart if still in conversation mode and not processing
+      if (conversationMode && !jarvisMutation.isPending) {
+        setTimeout(() => {
+          if (conversationMode && recognitionRef.current) {
+            console.log('Restarting continuous recognition...');
+            recognitionRef.current.start();
+          }
+        }, 1000);
       }
     };
 
     recognition.start();
+  };
+
+  const stopWebSpeechRecognition = () => {
+    console.log('Stopping Web Speech API recognition');
+    setConversationMode(false);
+    setIsRecording(false);
+    setVoiceVisualizationVisible(false);
+    setStatus("Ready for your command, sir.");
+    
+    if (recognitionRef.current) {
+      recognitionRef.current.stop();
+      recognitionRef.current = null;
+    }
   };
 
   // Legacy function - now unused but kept for compatibility
@@ -750,15 +728,16 @@ export default function JarvisInterface({ sessionId }: JarvisInterfaceProps) {
       <div className="fixed bottom-16 left-1/2 transform -translate-x-1/2 z-20">
         <VoiceButton
           onStartRecording={() => {
-            console.log('Starting Web Speech API voice recognition');
+            console.log('Starting continuous conversation with JARVIS');
             startWebSpeechRecognition();
           }}
           onStopRecording={() => {
-            console.log('Voice recognition stopped automatically');
+            console.log('Stopping conversation with JARVIS');
+            stopWebSpeechRecognition();
           }}
           isRecording={isRecording}
           isProcessing={isProcessing}
-          conversationMode={false} // Simplified: single-shot recognition
+          conversationMode={conversationMode}
           isWaitingForResponse={isWaitingForResponse}
         />
       </div>
