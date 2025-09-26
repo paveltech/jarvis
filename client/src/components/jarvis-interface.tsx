@@ -363,8 +363,17 @@ export default function JarvisInterface({ sessionId }: JarvisInterfaceProps) {
       queryClient.invalidateQueries({ queryKey: ['/api/conversations', sessionId] });
       setIsWaitingForResponse(false);
       
-      // Play audio response if available
+      // Play audio response if available - ROBUST AUDIO MANAGEMENT
       if (jarvisResponse.audioUrl) {
+        // CRITICAL: Stop any existing audio first to prevent double voices
+        if (currentAudioRef.current) {
+          console.log('🛑 Stopping previous audio to prevent double voices');
+          currentAudioRef.current.pause();
+          currentAudioRef.current.currentTime = 0;
+          currentAudioRef.current.src = '';
+          currentAudioRef.current = null;
+        }
+        
         setStatus("JARVIS is responding...");
         const audio = new Audio(jarvisResponse.audioUrl);
         currentAudioRef.current = audio; // Store reference for stopping
@@ -374,11 +383,17 @@ export default function JarvisInterface({ sessionId }: JarvisInterfaceProps) {
           stopInterruptDetection();
           if (conversationMode) {
             setStatus("Listening, sir...");
-            console.log('JARVIS finished speaking, restarting continuous recognition...');
-            // Restart the main speech recognition for next input
+            console.log('🔄 JARVIS finished speaking, restarting continuous recognition...');
+            // ROBUST: Only restart if not already running and still in conversation mode
             setTimeout(() => {
-              if (conversationMode) {
-                startWebSpeechRecognition();
+              if (conversationMode && !recognitionRef.current) {
+                try {
+                  startWebSpeechRecognition();
+                } catch (error) {
+                  console.log('⚠️ Failed to restart recognition:', error);
+                }
+              } else {
+                console.log('⏹️ Skipping recognition restart - already running or not in conversation mode');
               }
             }, 1000);
           } else {
