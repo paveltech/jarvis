@@ -505,38 +505,95 @@ export default function JarvisInterface({ sessionId }: JarvisInterfaceProps) {
     }
   };
 
-  const processAudioInput = async (audioBlob: Blob) => {
-    try {
-      // Step 1: Transcribe audio
-      setStatus("Transcribing your message...");
-      const transcription = await transcribeMutation.mutateAsync(audioBlob);
-      
-      // Step 2: Send to JARVIS
-      setStatus("JARVIS is processing your request...");
-      const jarvisResponse = await jarvisMutation.mutateAsync({
-        message: transcription.text,
-        sessionId,
-      });
-
-      // Step 3: Play audio response if available
-      if (jarvisResponse.audioUrl) {
-        setStatus("JARVIS is responding...");
-        const audio = new Audio(jarvisResponse.audioUrl);
-        audio.onended = () => setStatus("Ready for your command, sir");
-        audio.play().catch(console.error);
-      } else {
-        setStatus("Ready for your command, sir");
-      }
-
-    } catch (error) {
-      console.error('Error processing audio:', error);
-      setStatus("Something went wrong, sir. Please try again.");
+  // Web Speech API - Real-time browser-based speech recognition (no server needed!)
+  const startWebSpeechRecognition = () => {
+    if (!('webkitSpeechRecognition' in window) && !('SpeechRecognition' in window)) {
       toast({
-        title: "Processing Error",
-        description: "Failed to process your request. Please try again.",
+        title: "Speech Recognition Not Supported",
+        description: "Your browser doesn't support speech recognition. Please try a different browser.",
         variant: "destructive",
       });
+      return;
     }
+
+    const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
+    const recognition = new SpeechRecognition();
+    
+    recognition.continuous = false;
+    recognition.interimResults = false;
+    recognition.lang = 'de-DE'; // German language for JARVIS
+    recognition.maxAlternatives = 1;
+
+    recognition.onstart = () => {
+      setIsRecording(true);
+      setVoiceVisualizationVisible(true);
+      setStatus("Listening, sir...");
+      console.log('Web Speech API: Recognition started');
+    };
+
+    recognition.onresult = async (event: any) => {
+      const transcript = event.results[0][0].transcript;
+      console.log('Web Speech API transcribed:', transcript);
+      
+      setIsRecording(false);
+      setVoiceVisualizationVisible(false);
+      setStatus("JARVIS is processing your request...");
+
+      try {
+        // Send directly to JARVIS without server-side transcription
+        await jarvisMutation.mutateAsync({
+          message: transcript,
+          sessionId,
+        });
+      } catch (error) {
+        console.error('Error sending to JARVIS:', error);
+        setStatus("Error processing request. Please try again.");
+        toast({
+          title: "JARVIS Error",
+          description: "Failed to process your request. Please try again.",
+          variant: "destructive",
+        });
+      }
+    };
+
+    recognition.onerror = (event: any) => {
+      console.error('Web Speech API error:', event.error);
+      setIsRecording(false);
+      setVoiceVisualizationVisible(false);
+      setStatus("Speech recognition error. Please try again.");
+      
+      if (event.error === 'no-speech') {
+        toast({
+          title: "No Speech Detected",
+          description: "Please speak clearly and try again.",
+          variant: "destructive",
+        });
+      } else {
+        toast({
+          title: "Speech Recognition Error",
+          description: `Error: ${event.error}. Please try again.`,
+          variant: "destructive",
+        });
+      }
+    };
+
+    recognition.onend = () => {
+      console.log('Web Speech API recognition ended');
+      if (!jarvisMutation.isPending) {
+        setIsRecording(false);
+        setVoiceVisualizationVisible(false);
+        if (status === "Listening, sir...") {
+          setStatus("Ready for your command, sir.");
+        }
+      }
+    };
+
+    recognition.start();
+  };
+
+  // Legacy function - now unused but kept for compatibility
+  const processAudioInput = async (audioBlob: Blob) => {
+    console.log('processAudioInput called - this should not happen with Web Speech API');
   };
 
   const isProcessing = transcribeMutation.isPending || jarvisMutation.isPending;
@@ -693,28 +750,15 @@ export default function JarvisInterface({ sessionId }: JarvisInterfaceProps) {
       <div className="fixed bottom-16 left-1/2 transform -translate-x-1/2 z-20">
         <VoiceButton
           onStartRecording={() => {
-            if (!conversationMode) {
-              console.log('Starting continuous conversation mode');
-              setConversationMode(true);
-              startRecording();
-            } else {
-              console.log('Ending conversation mode');
-              setConversationMode(false);
-              if (isRecording) {
-                stopRecordingHandler();
-              }
-            }
+            console.log('Starting Web Speech API voice recognition');
+            startWebSpeechRecognition();
           }}
           onStopRecording={() => {
-            if (conversationMode && isRecording) {
-              stopRecordingHandler();
-            } else if (!conversationMode) {
-              stopRecordingHandler();
-            }
+            console.log('Voice recognition stopped automatically');
           }}
           isRecording={isRecording}
           isProcessing={isProcessing}
-          conversationMode={conversationMode}
+          conversationMode={false} // Simplified: single-shot recognition
           isWaitingForResponse={isWaitingForResponse}
         />
       </div>
