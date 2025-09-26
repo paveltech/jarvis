@@ -195,38 +195,60 @@ export default function JarvisInterface({ sessionId }: JarvisInterfaceProps) {
                 const customEvent = event as CustomEvent;
                 console.log(`🎯 ElevenLabs ${eventType}:`, customEvent.detail);
                 
-                // Handle different event types
+                // Handle different event types with JARVIS visual integration
                 switch(eventType) {
                   case 'conversation-started':
+                    console.log('✅ ElevenLabs conversation started - JARVIS is active');
                     setConversationMode(true);
+                    setIsRecording(true);
+                    setVoiceVisualizationVisible(true);
                     setStatus("JARVIS is listening, sir...");
+                    toast({
+                      title: "JARVIS Activated",
+                      description: "Voice conversation started. Speak naturally, JARVIS will respond.",
+                    });
                     break;
                     
                   case 'conversation-ended':
+                    console.log('⏹️ ElevenLabs conversation ended - JARVIS is ready');
                     setConversationMode(false);
+                    setIsRecording(false);
+                    setVoiceVisualizationVisible(false);
                     setStatus("Ready for your command, sir...");
                     break;
                     
                   case 'user-speaking-started':
-                    setStatus("Listening to your command...");
+                    console.log('🎤 User started speaking to JARVIS');
+                    setIsRecording(true);
+                    setStatus("Recording your command...");
+                    break;
+                    
+                  case 'user-speaking-ended':
+                    console.log('🔇 User finished speaking');
+                    setIsRecording(false);
+                    setStatus("Processing with JARVIS...");
                     break;
                     
                   case 'agent-speaking-started':
+                    console.log('🗣️ JARVIS started speaking - interruption naturally supported');
+                    setIsWaitingForResponse(true);
                     setStatus("JARVIS is responding...");
-                    // This handles the interruption naturally!
+                    // ElevenLabs handles interruption automatically!
                     break;
                     
                   case 'agent-speaking-ended':
+                    console.log('✅ JARVIS finished speaking');
+                    setIsWaitingForResponse(false);
                     setStatus("JARVIS is listening, sir...");
                     break;
                     
                   case 'user-transcript':
                     const userMessage = customEvent.detail?.transcript || customEvent.detail?.text;
                     if (userMessage) {
-                      console.log('🎤 User said:', userMessage);
+                      console.log('📝 User transcript captured:', userMessage);
                       setStatus("JARVIS is processing your request...");
                       
-                      // Send to n8n workflow for processing
+                      // Send to n8n workflow for JARVIS intelligence
                       jarvisMutation.mutate({ 
                         message: userMessage, 
                         sessionId: sessionId 
@@ -237,7 +259,8 @@ export default function JarvisInterface({ sessionId }: JarvisInterfaceProps) {
                   case 'agent-response':
                     const agentMessage = customEvent.detail?.response || customEvent.detail?.text;
                     if (agentMessage) {
-                      console.log('🤖 JARVIS responded:', agentMessage);
+                      console.log('🤖 JARVIS natural response:', agentMessage);
+                      // ElevenLabs handles voice synthesis automatically
                     }
                     break;
                 }
