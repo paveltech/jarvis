@@ -758,16 +758,16 @@ export default function JarvisInterface({ sessionId }: JarvisInterfaceProps) {
             ))}
           </div>
 
-          {/* Ring 1 - Inner bright glow ring with pulsing */}
-          <div className="absolute w-40 h-40 border-2 border-cyan-400 rounded-full bg-gradient-radial from-cyan-400/30 via-cyan-400/15 to-transparent animate-jarvis-core-pulse shadow-[0_0_30px_rgba(0,255,255,0.8)]"></div>
+          {/* Ring 1 - Inner bright glow ring with pulsing - ENHANCED LIKE ORIGINAL */}
+          <div className="absolute w-40 h-40 border-4 border-cyan-400 rounded-full bg-gradient-radial from-cyan-400/60 via-cyan-400/30 to-transparent animate-jarvis-core-pulse shadow-[0_0_60px_rgba(0,255,255,1.0),0_0_40px_rgba(0,255,255,0.8),0_0_20px_rgba(0,255,255,0.6)]"></div>
 
           {/* Center Core - JARVIS Text with authentic pulsing glow */}
           <div className="absolute w-32 h-32 flex items-center justify-center bg-gradient-radial from-cyan-400/25 via-cyan-400/10 to-transparent rounded-full">
             {/* Central background glow - stronger pulse */}
             <div className="absolute w-28 h-28 bg-gradient-radial from-cyan-400/40 via-cyan-400/20 to-transparent rounded-full animate-jarvis-glow-breath"></div>
             
-            {/* J.A.R.V.I.S Text - Authentic font and glow */}
-            <span className="relative z-10 text-white font-sans text-lg tracking-[0.3em] font-light animate-jarvis-text-glow">
+            {/* J.A.R.V.I.S Text - Authentic font and glow - ENHANCED LIKE ORIGINAL */}
+            <span className="relative z-10 text-cyan-100 font-mono text-xl tracking-[0.4em] font-normal animate-jarvis-text-glow" style={{fontFamily: 'Rajdhani, Inter, system-ui, sans-serif'}}>
               J.A.R.V.I.S
             </span>
           </div>
