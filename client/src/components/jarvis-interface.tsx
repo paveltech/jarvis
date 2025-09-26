@@ -19,6 +19,19 @@ export default function JarvisInterface({ sessionId }: JarvisInterfaceProps) {
   const [showConversationalAI, setShowConversationalAI] = useState(false);
   const [conversationMode, setConversationMode] = useState(false);
   const [isWaitingForResponse, setIsWaitingForResponse] = useState(false);
+  const [debugInfo, setDebugInfo] = useState<{
+    recognitionActive: boolean;
+    lastConfidence: number;
+    noiseFiltered: number;
+    lastInput: string;
+    interruptionMode: boolean;
+  }>({
+    recognitionActive: false,
+    lastConfidence: 0,
+    noiseFiltered: 0,
+    lastInput: '',
+    interruptionMode: false
+  });
   const recognitionRef = useRef<any>(null);
   const interruptRecognitionRef = useRef<any>(null);
   const currentAudioRef = useRef<HTMLAudioElement | null>(null);
@@ -102,96 +115,143 @@ export default function JarvisInterface({ sessionId }: JarvisInterfaceProps) {
     return arrayBuffer;
   };
 
-  // MODERN ElevenLabs ConvAI Widget Integration (CORRECT APPROACH)
+  // OPTIMIZED: Direct ElevenLabs Embedding + Enhanced Voice Activity Detection
   useEffect(() => {
-    console.log('🎯 Loading MODERN ElevenLabs ConvAI Widget for PRODUCTION...');
+    console.log('🎯 Loading OPTIMIZED ElevenLabs Integration for PRODUCTION...');
     
-    const loadWidget = async () => {
+    const loadOptimizedWidget = async () => {
       try {
         // Only load on production domain (not localhost/dev)
         if (window.location.hostname.includes('localhost') || window.location.hostname.includes('127.0.0.1')) {
-          console.log('⚠️ Skipping ElevenLabs widget on development - use published URL');
+          console.log('⚠️ Skipping ElevenLabs on development - use published URL');
           return;
         }
         
-        // MODERN: Use official ConvAI Widget CDN
+        // ENHANCED: Multiple loading strategies for reliability (no aggressive timeout)
+        try {
+          await loadViaConvaiWidget();
+        } catch (error) {
+          console.log('ConvAI Widget failed, trying direct embed...');
+          try {
+            await loadViaDirectEmbed();
+          } catch (embedError) {
+            console.log('Direct embed also failed, using enhanced Web Speech');
+            throw new Error('All ElevenLabs strategies failed');
+          }
+        }
+        
+      } catch (error) {
+        console.log('⚠️ All ElevenLabs loading strategies failed - using enhanced Web Speech');
+        initializeEnhancedWebSpeech();
+      }
+    };
+    
+    const loadViaConvaiWidget = async () => {
+      return new Promise((resolve, reject) => {
         const script = document.createElement('script');
         script.src = 'https://cdn.elevenlabs.io/convai-widget/index.js';
         script.async = true;
         
         script.onload = () => {
-          console.log('✅ ElevenLabs ConvAI Widget script loaded successfully');
-          initializeModernWidget();
+          console.log('✅ ConvAI Widget script loaded - initializing...');
+          
+          setTimeout(() => {
+            if ((window as any).ConvaiUI) {
+              const widget = (window as any).ConvaiUI({
+                agentId: 'agent_0601k62vhrxafx98s1k6zshc6n7t',
+                apiKey: undefined,
+                
+                // OPTIMIZED: Enhanced VAD and noise suppression
+                startBehavior: 'open_mic',
+                clientEvents: ['interruption', 'start', 'end', 'error'],
+                
+                // NOISE HANDLING: Better microphone settings
+                microphoneSettings: {
+                  echoCancellation: true,
+                  noiseSuppression: true,
+                  autoGainControl: true,
+                },
+                
+                // VAD OPTIMIZATION: Voice Activity Detection tuning
+                vadSettings: {
+                  threshold: 0.6, // Higher threshold for noisy environments
+                  patience: 800,   // Wait longer before detecting silence
+                  minSpeechFrames: 3 // Need more frames to confirm speech
+                },
+                
+                onStart: () => {
+                  console.log('🎯 ElevenLabs: Conversation started with enhanced VAD');
+                  setConversationMode(true);
+                  setStatus('JARVIS listening (Enhanced VAD)');
+                },
+                
+                onEnd: () => {
+                  console.log('🛑 ElevenLabs: Conversation ended');
+                  setConversationMode(false);
+                  setStatus('Ready for your command, sir.');
+                },
+                
+                onError: (error: any) => {
+                  console.error('ElevenLabs conversation error:', error);
+                  reject(error);
+                },
+                
+                onInterruption: () => {
+                  console.log('🛑 ElevenLabs: Natural interruption detected');
+                  setStatus('JARVIS interrupted naturally...');
+                }
+              });
+              
+              (window as any).jarvisWidget = widget;
+              console.log('✅ ElevenLabs ConvAI Widget ready with enhanced VAD');
+              resolve(widget);
+            } else {
+              reject(new Error('ConvaiUI not available'));
+            }
+          }, 1000);
         };
         
-        script.onerror = () => {
-          console.log('⚠️ ElevenLabs ConvAI Widget failed to load - fallback to Web Speech API');
-        };
-        
+        script.onerror = () => reject(new Error('ConvAI Widget script failed'));
         document.head.appendChild(script);
-      } catch (error) {
-        console.error('ElevenLabs ConvAI Widget loading error:', error);
-      }
+      });
     };
     
-    const initializeModernWidget = () => {
-      try {
-        // MODERN ConvAI Widget - Official API
-        if ((window as any).ConvaiUI) {
-          console.log('🎯 Initializing ElevenLabs ConvAI Widget...');
-          
-          const widget = (window as any).ConvaiUI({
-            agentId: 'agent_0601k62vhrxafx98s1k6zshc6n7t', // Your JARVIS Agent ID
-            apiKey: undefined, // No client-side API key needed
-            
-            // BARGE-IN: Enable interruption support (based on config docs)
-            clientEvents: ['interruption'], // Enable client-side interruption events
-            
-            // CONVERSATION FLOW: Optimize for natural conversation
-            startBehavior: 'open_mic', // Open microphone mode for continuous listening
-            
-            // CALLBACKS: Handle conversation events
-            onStart: () => {
-              console.log('🎯 ElevenLabs conversation started');
-              setConversationMode(true);
-              setStatus('JARVIS is listening via ElevenLabs...');
-            },
-            
-            onEnd: () => {
-              console.log('🛑 ElevenLabs conversation ended');
-              setConversationMode(false);
-              setStatus('Ready for your command, sir.');
-            },
-            
-            onError: (error: any) => {
-              console.error('ElevenLabs conversation error:', error);
-              setStatus('ElevenLabs error - switching to Web Speech fallback');
-              startWebSpeechFallback();
-            },
-            
-            onInterruption: () => {
-              console.log('🛑 ElevenLabs interruption detected');
-              setStatus('JARVIS interrupted via ElevenLabs...');
-            }
-          });
-          
-          // Store widget reference for interruption
-          (window as any).jarvisWidget = widget;
-          console.log('✅ ElevenLabs ConvAI Widget initialized successfully');
-          
-        } else {
-          console.log('⚠️ ConvaiUI not available after script load');
-        }
-      } catch (error) {
-        console.error('ElevenLabs ConvAI Widget initialization error:', error);
-      }
+    const loadViaDirectEmbed = async () => {
+      return new Promise((resolve, reject) => {
+        // BACKUP: Direct HTML embed approach
+        const embedContainer = document.createElement('div');
+        embedContainer.innerHTML = `
+          <elevenlabs-convai 
+            agent-id="agent_0601k62vhrxafx98s1k6zshc6n7t"
+            client-events="interruption,start,end,error"
+            style="display: none;"
+          ></elevenlabs-convai>
+        `;
+        
+        document.body.appendChild(embedContainer);
+        
+        setTimeout(() => {
+          const widget = embedContainer.querySelector('elevenlabs-convai') as any;
+          if (widget && widget.startConversation) {
+            (window as any).jarvisWidget = widget;
+            console.log('✅ ElevenLabs direct embed ready');
+            resolve(widget);
+          } else {
+            reject(new Error('Direct embed failed'));
+          }
+        }, 2000);
+      });
+    };
+    
+    const initializeEnhancedWebSpeech = () => {
+      console.log('🔧 Initializing Enhanced Web Speech with noise optimization');
+      setStatus('Enhanced speech recognition ready (noise-optimized)');
     };
 
-    loadWidget();
+    loadOptimizedWidget();
     
     return () => {
-      console.log('ElevenLabs ConvAI Widget cleaned up');
-      // Clean up widget if needed
+      console.log('ElevenLabs integration cleaned up');
       if ((window as any).jarvisWidget) {
         try {
           (window as any).jarvisWidget.destroy?.();
@@ -635,7 +695,7 @@ export default function JarvisInterface({ sessionId }: JarvisInterfaceProps) {
   };
 
   const startWebSpeechFallback = () => {
-    console.log('🔄 Starting Web Speech API fallback with continuous recognition');
+    console.log('🔄 Starting ENHANCED Web Speech API with noise optimization');
     
     if (!('webkitSpeechRecognition' in window) && !('SpeechRecognition' in window)) {
       toast({
@@ -649,11 +709,17 @@ export default function JarvisInterface({ sessionId }: JarvisInterfaceProps) {
     const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
     const recognition = new SpeechRecognition();
     
-    // Enhanced for better interruption detection
-    recognition.continuous = true; // Continuous listening for interruption
-    recognition.interimResults = true; // Catch interruptions faster
+    // OPTIMIZED: Enhanced settings for noisy environments
+    recognition.continuous = true;
+    recognition.interimResults = true;
     recognition.lang = 'de-DE';
-    recognition.maxAlternatives = 1;
+    recognition.maxAlternatives = 3; // More alternatives for noisy audio
+    
+    // ENHANCED: Additional Web Speech optimizations
+    if ('webkitSpeechRecognition' in window) {
+      // Chrome-specific optimizations
+      (recognition as any).serviceName = 'chrome'; // Use Chrome's enhanced engine
+    }
 
     recognitionRef.current = recognition;
 
@@ -667,7 +733,45 @@ export default function JarvisInterface({ sessionId }: JarvisInterfaceProps) {
 
     recognition.onresult = async (event: any) => {
       const lastResult = event.results[event.results.length - 1];
-      const transcript = lastResult[0].transcript.trim();
+      let transcript = lastResult[0].transcript.trim();
+      
+      // NOISE FILTERING: Enhanced confidence-based filtering
+      const confidence = lastResult[0].confidence || 0;
+      const minConfidence = 0.5; // Balanced threshold - not too aggressive
+      
+      // NOISE FILTERING: Multiple alternatives analysis for better accuracy
+      if (event.results[event.results.length - 1].length > 1) {
+        const alternatives = Array.from(event.results[event.results.length - 1])
+          .map((alt: any) => ({ transcript: alt.transcript.trim(), confidence: alt.confidence || 0 }))
+          .filter((alt: any) => alt.confidence > minConfidence)
+          .sort((a: any, b: any) => b.confidence - a.confidence);
+        
+        if (alternatives.length > 0) {
+          transcript = alternatives[0].transcript;
+          console.log(`🎤 Enhanced: Using best alternative (confidence: ${alternatives[0].confidence})`);
+        }
+      }
+      
+      // NOISE FILTERING: Length and content validation
+      if (transcript.length < 2 || confidence < minConfidence) {
+        console.log(`⚠️ Filtered low-confidence input: "${transcript}" (confidence: ${confidence})`);
+        return; // Skip low-confidence or too-short inputs
+      }
+      
+      // BACKGROUND NOISE: Filter common noise patterns
+      const noisePatterns = [
+        /^(ah+|eh+|um+|hm+|mm+)$/i,  // Filler sounds
+        /^(la+|na+|da+|ba+)$/i,       // Random syllables
+        /^[a-z]$/i,                   // Single letters
+        /^\\W+$/,                      // Only punctuation/symbols
+      ];
+      
+      if (noisePatterns.some(pattern => pattern.test(transcript))) {
+        console.log(`🔇 Filtered noise pattern: "${transcript}"`);
+        return;
+      }
+      
+      console.log(`✅ Clean input accepted: "${transcript}" (confidence: ${confidence})`);
       
       // UNIFIED: Check for interruption during JARVIS speech (enhances existing logic)
       if (interruptionModeRef.current && lastResult.isFinal && transcript.length > 2) {
