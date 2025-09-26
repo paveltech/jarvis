@@ -770,7 +770,7 @@ export default function JarvisInterface({ sessionId }: JarvisInterfaceProps) {
             <div className="absolute w-24 h-24 bg-gradient-radial from-white/20 via-cyan-400/60 to-transparent rounded-full animate-jarvis-core-pulse"></div>
             
             {/* J.A.R.V.I.S Text - Authentic font and glow - ENHANCED LIKE ORIGINAL */}
-            <span className="relative z-10 text-white font-medium text-xl tracking-[0.4em] animate-jarvis-text-glow" style={{fontFamily: 'Rajdhani, Inter, system-ui, sans-serif', fontWeight: 500}}>
+            <span className="relative z-10 text-white text-xl animate-jarvis-text-glow" style={{fontFamily: 'Rajdhani, Inter, system-ui, sans-serif', fontWeight: 500, letterSpacing: '0.4em'}}>
               J.A.R.V.I.S
             </span>
           </div>
