@@ -156,10 +156,8 @@ export default function JarvisInterface({ sessionId }: JarvisInterfaceProps) {
             // Create the widget element
             const widget = document.createElement('elevenlabs-convai') as any;
             
-            // Configure the widget with user's ElevenLabs credentials
-            // For now using environment variable, user can set this in their .env
-            const agentId = import.meta.env.VITE_ELEVENLABS_AGENT_ID || 'demo-agent-id';
-            widget.setAttribute('agent-id', agentId);
+            // Configure the widget with the correct Agent ID from user
+            widget.setAttribute('agent-id', 'agent_0601k62vhrxafx98s1k6zshc6n7t');
             widget.setAttribute('public-user-id', `jarvis-user-${sessionId}`);
             
             // Additional widget configuration for JARVIS
