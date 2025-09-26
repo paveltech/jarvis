@@ -610,84 +610,11 @@ export default function JarvisInterface({ sessionId }: JarvisInterfaceProps) {
     recognition.start();
   };
 
+  // EVENT-SAFE: Removed unreliable trigger word detection
+  // Click-to-interrupt is now the primary method for event reliability
   const startInterruptDetection = () => {
-    console.log('🎤 Starting JARVIS trigger word detection');
-    
-    if (!('webkitSpeechRecognition' in window) && !('SpeechRecognition' in window)) {
-      console.log('Speech recognition not supported for trigger word detection');
-      return;
-    }
-
-    const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
-    const triggerRecognition = new SpeechRecognition();
-    
-    // Simple trigger word configuration - like Alexa
-    triggerRecognition.continuous = true;
-    triggerRecognition.interimResults = false; // Only final results to avoid false triggers
-    triggerRecognition.lang = 'de-DE';
-    
-    triggerRecognition.onresult = (event: any) => {
-      const lastResult = event.results[event.results.length - 1];
-      const transcript = lastResult[0].transcript.trim().toLowerCase();
-      const confidence = lastResult[0].confidence;
-      
-      console.log(`🎧 Trigger detection: "${transcript}" (confidence: ${confidence})`);
-      
-      // Check for JARVIS trigger word
-      if (transcript.includes('jarvis') && confidence > 0.5) {
-        console.log('🎯 JARVIS trigger word detected! Stopping and listening...');
-        
-        // Stop JARVIS immediately and forcefully
-        if (currentAudioRef.current) {
-          console.log('🛑 Force stopping JARVIS audio immediately');
-          try {
-            currentAudioRef.current.pause();
-            currentAudioRef.current.currentTime = 0;
-            currentAudioRef.current.src = '';
-            currentAudioRef.current.load(); // Force reload to stop completely
-          } catch (e) {
-            console.log('Audio stop error:', e);
-          } finally {
-            currentAudioRef.current = null;
-          }
-        }
-        
-        // Stop trigger detection
-        stopInterruptDetection();
-        
-        // Switch to listening mode for the actual command
-        setStatus("Listening for your command, sir...");
-        setTimeout(() => {
-          console.log('💬 Ready for command after JARVIS trigger');
-          // Don't need to call anything here - the main recognition is still running
-        }, 500);
-      }
-    };
-    
-    triggerRecognition.onerror = (event: any) => {
-      console.log('Trigger word detection error:', event.error);
-      
-      // Silently restart on common errors
-      if (event.error === 'no-speech' || event.error === 'audio-capture') {
-        setTimeout(() => {
-          if (currentAudioRef.current) {
-            startInterruptDetection();
-          }
-        }, 1000);
-      }
-    };
-    
-    triggerRecognition.onend = () => {
-      // Restart trigger detection if JARVIS is still speaking
-      if (currentAudioRef.current) {
-        setTimeout(() => {
-          startInterruptDetection();
-        }, 200);
-      }
-    };
-    
-    interruptRecognitionRef.current = triggerRecognition;
-    triggerRecognition.start();
+    console.log('🎯 Event-safe mode: Click interface to interrupt JARVIS');
+    // No speech recognition - click interface is 100% reliable for events
   };
 
   const stopInterruptDetection = () => {
@@ -734,166 +661,43 @@ export default function JarvisInterface({ sessionId }: JarvisInterfaceProps) {
   return (
     <div className="flex-1 flex flex-col items-center justify-center relative" data-testid="jarvis-main-content">
       
-      {/* Advanced JARVIS Hub - High-tech Iron Man Style */}
+      {/* Simple JARVIS Hub - Event-Safe Design */}
       <div className="relative flex items-center justify-center" data-testid="jarvis-hub">
-        
+        <div 
+          className="jarvis-simple" 
+          data-testid="jarvis-interface"
+          onClick={() => {
+            if (currentAudioRef.current) {
+              console.log('🎯 User clicked to interrupt JARVIS');
+              currentAudioRef.current.pause();
+              currentAudioRef.current.currentTime = 0;
+              currentAudioRef.current.src = '';
+              currentAudioRef.current = null;
+              setStatus("Ready for your command, sir...");
+            }
+          }}
+          style={{ cursor: currentAudioRef.current ? 'pointer' : 'default' }}
+        >
+          {/* Simple concentric circles */}
+          <div className="jarvis-circle-outer"></div>
+          <div className="jarvis-circle-middle"></div>
+          <div className="jarvis-circle-inner"></div>
 
-        {/* Authentic JARVIS Interface - Exactly as shown in reference image */}
-        <div className="relative w-64 h-64 flex items-center justify-center">
           
-          {/* Ring 5 - Outermost interrupted circles with square dots (like reference) */}
-          <div className="absolute w-60 h-60">
-            {/* Interrupted outer arc segments */}
-            {Array.from({ length: 8 }, (_, i) => (
-              <div
-                key={`outer-arc-${i}`}
-                className="absolute bg-cyan-400/60 rounded-full"
-                style={{
-                  width: i % 2 === 0 ? '35px' : '25px',
-                  height: '2px',
-                  top: '50%',
-                  left: '50%',
-                  transformOrigin: '0px 0px',
-                  transform: `translate(-50%, -50%) rotate(${i * 45}deg) translateX(118px)`,
-                }}
-              />
-            ))}
-            
-            {/* Square dot indicators exactly like reference */}
-            {Array.from({ length: 16 }, (_, i) => (
-              <div
-                key={`square-dot-${i}`}
-                className="absolute w-1.5 h-1.5 bg-cyan-400/80"
-                style={{
-                  top: '50%',
-                  left: '50%',
-                  transform: `translate(-50%, -50%) rotate(${i * 22.5}deg) translateX(115px)`,
-                }}
-              />
-            ))}
+          {/* Core with JARVIS text */}
+          <div className="jarvis-text">
+            J.A.R.V.I.S
           </div>
-
-          {/* Ring 4 - Segmented arcs with strategic gaps (matching reference) */}
-          <div className="absolute w-48 h-48">
-            {/* Main segmented arcs - broken pattern like reference */}
-            {Array.from({ length: 12 }, (_, i) => (
-              <div
-                key={`seg-arc-${i}`}
-                className="absolute bg-cyan-400/70 rounded-sm"
-                style={{
-                  width: i % 3 === 0 ? '28px' : '20px',
-                  height: '1.5px',
-                  top: '50%',
-                  left: '50%',
-                  transformOrigin: '0px 0px',
-                  transform: `translate(-50%, -50%) rotate(${i * 30}deg) translateX(94px)`,
-                }}
-              />
-            ))}
-          </div>
-
-          {/* Ring 3 - Binary Data Display (curved text like reference) */}
-          <div className="absolute w-40 h-40">
-            {/* Curved binary text segments around the ring - positioned at radius 78px */}
-            {Array.from({ length: 4 }, (_, quadrant) => {
-              const binaryStrings = ['0000000000', '0010010010', '0000000000', '0001100010'];
-              const angleStart = quadrant * 90 - 25; // Start angle for each quadrant
-              return Array.from({ length: 10 }, (_, charIndex) => (
-                <div
-                  key={`binary-${quadrant}-${charIndex}`}
-                  className="absolute text-[9px] font-mono text-cyan-400/90 font-bold"
-                  style={{
-                    top: '50%',
-                    left: '50%',
-                    transform: `translate(-50%, -50%) rotate(${angleStart + charIndex * 5}deg) translateY(-78px) rotate(-${angleStart + charIndex * 5}deg)`,
-                  }}
-                >
-                  {binaryStrings[quadrant][charIndex]}
-                </div>
-              ));
-            })}
-          </div>
-
-          {/* Ring 2 - Measurement scales and tick marks (like reference) */}
-          <div className="absolute w-32 h-32 border border-cyan-400/70 rounded-full">
-            {/* Main tick marks with correct positioning at radius 64px */}
-            {Array.from({ length: 72 }, (_, i) => (
-              <div
-                key={`tick-${i}`}
-                className={`absolute bg-cyan-400/80 ${
-                  i % 18 === 0 ? 'w-0.5 h-4' : 
-                  i % 6 === 0 ? 'w-px h-3' : 
-                  'w-px h-2'
-                }`}
-                style={{
-                  top: i % 18 === 0 ? '-8px' : i % 6 === 0 ? '-6px' : '-4px',
-                  left: '50%',
-                  transformOrigin: '50% 64px',
-                  transform: `translateX(-50%) rotate(${i * 5}deg)`,
-                }}
-              />
-            ))}
-          </div>
-
-          {/* Ring 1 - Inner bright glow ring (matching reference intensity) */}
-          <div className="absolute w-24 h-24 border-2 border-cyan-400 rounded-full bg-gradient-radial from-cyan-400/25 via-cyan-400/15 to-transparent animate-jarvis-core-pulse shadow-[0_0_20px_rgba(0,255,255,0.6)]"></div>
-
-          {/* Center Core - JARVIS Text with authentic glow (exactly like reference) */}
-          <div className="absolute w-20 h-20 flex items-center justify-center bg-gradient-radial from-cyan-400/20 via-cyan-400/10 to-transparent rounded-full">
-            {/* Central background glow - stronger like reference */}
-            <div className="absolute w-16 h-16 bg-gradient-radial from-cyan-400/40 via-cyan-400/20 to-transparent rounded-full animate-jarvis-glow-breath"></div>
-            
-            {/* J.A.R.V.I.S Text - Authentic font and positioning */}
-            <span className="relative z-10 text-white font-sans text-sm tracking-[0.25em] font-normal animate-jarvis-text-glow">
-              J.A.R.V.I.S
-            </span>
-          </div>
-
-        </div>
-
-
-
-        {/* Corner HUD Elements */}
-        <div className="absolute -top-8 -left-8 w-16 h-16 border-t-2 border-l-2 border-cyan-400/60">
-          <div className="absolute top-1 left-1 w-2 h-2 bg-cyan-400"></div>
-        </div>
-        <div className="absolute -top-8 -right-8 w-16 h-16 border-t-2 border-r-2 border-cyan-400/60">
-          <div className="absolute top-1 right-1 w-2 h-2 bg-cyan-400"></div>
-        </div>
-        <div className="absolute -bottom-8 -left-8 w-16 h-16 border-b-2 border-l-2 border-cyan-400/60">
-          <div className="absolute bottom-1 left-1 w-2 h-2 bg-cyan-400"></div>
-        </div>
-        <div className="absolute -bottom-8 -right-8 w-16 h-16 border-b-2 border-r-2 border-cyan-400/60">
-          <div className="absolute bottom-1 right-1 w-2 h-2 bg-cyan-400"></div>
+          
+          {/* Show click hint when JARVIS is speaking */}
+          {currentAudioRef.current && (
+            <div className="jarvis-click-hint">
+              Click to interrupt
+            </div>
+          )}
         </div>
       </div>
 
-      {/* Authentic JARVIS HUD Interface */}
-      {voiceVisualizationVisible && (
-        <div className="jarvis-hud" data-testid="jarvis-hud">
-          {/* Outer ring with data points */}
-          <div className="jarvis-data-points">
-            <div className="data-point"></div>
-            <div className="data-point"></div>
-            <div className="data-point"></div>
-            <div className="data-point"></div>
-            <div className="data-point"></div>
-          </div>
-          
-          {/* Animated segments */}
-          <div className="jarvis-segments"></div>
-          
-          {/* Concentric rings */}
-          <div className="jarvis-ring-3"></div>
-          <div className="jarvis-ring-2"></div>
-          <div className="jarvis-ring-1"></div>
-          
-          {/* Core with JARVIS text */}
-          <div className="jarvis-core">
-            J.A.R.V.I.S
-          </div>
-        </div>
-      )}
 
       {/* Talk to JARVIS Button - Center Bottom */}
       <div className="fixed bottom-16 left-1/2 transform -translate-x-1/2 z-20">
