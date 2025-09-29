@@ -114,39 +114,31 @@ export async function registerRoutes(app: Express): Promise<Server> {
         jarvisResponse = jarvisResponseRaw; // Fallback to raw text
         console.log("Using raw response as fallback:", jarvisResponse);
       }
+      
+      // CRITICAL: Check for empty response from n8n
+      if (!jarvisResponse || jarvisResponse.trim() === '') {
+        console.error("❌ EMPTY RESPONSE from n8n! Check workflow status and configuration.");
+        jarvisResponse = "Es tut mir leid, aber ich kann momentan nicht antworten. Bitte überprüfen Sie die n8n-Workflow-Konfiguration oder versuchen Sie es später erneut.";
+      }
 
-      // Generate speech using ElevenLabs
+      // Generate speech using OpenAI TTS (KOSTENGÜNSTIGE ALTERNATIVE zu ElevenLabs)
       let audioUrl: string | undefined;
       try {
-        const elevenLabsApiKey = process.env.ELEVENLABS_API_KEY || process.env.ELEVENLABS_API_KEY_ENV_VAR || "default_key";
-        // Use user's custom JARVIS voice
-        const voiceId = process.env.ELEVENLABS_VOICE_ID || "ErXwobaYiN019PkySvjV"; // Fallback to Antoni if no custom voice
-        console.log("🎤 Using custom JARVIS voice:", voiceId);
-        
+        // COST-EFFECTIVE: Try OpenAI TTS first (viel günstiger als ElevenLabs)
+        console.log("🎤 Using cost-effective OpenAI TTS for speech generation");
         console.log("Generating speech for response:", jarvisResponse.substring(0, 100) + "...");
-        console.log("Using voice ID:", voiceId);
-        console.log("API key configured:", elevenLabsApiKey ? "YES" : "NO");
         
-        const ttsResponse = await fetch(`https://api.elevenlabs.io/v1/text-to-speech/${voiceId}`, {
-          method: 'POST',
-          headers: {
-            'Accept': 'audio/mpeg',
-            'Content-Type': 'application/json',
-            'xi-api-key': elevenLabsApiKey,
-          },
-          body: JSON.stringify({
-            text: jarvisResponse,
-            model_id: "eleven_multilingual_v2", // Use multilingual model for German
-            voice_settings: {
-              stability: 0.5,
-              similarity_boost: 0.5,
-            },
-          }),
+        const ttsResponse = await openai.audio.speech.create({
+          model: "tts-1", // Fastest and cheapest model ($15/1M chars vs ElevenLabs $120/1M chars)
+          voice: "onyx", // Deep male voice similar to JARVIS
+          input: jarvisResponse,
+          response_format: "mp3",
+          speed: 1.0,
         });
 
-        if (ttsResponse.ok) {
+        if (ttsResponse) {
           const audioBuffer = await ttsResponse.arrayBuffer();
-          const audioFilename = `jarvis_${Date.now()}.mp3`;
+          const audioFilename = `jarvis_openai_${Date.now()}.mp3`;
           const audioPath = path.join('uploads', audioFilename);
           
           // Ensure uploads directory exists
@@ -156,14 +148,54 @@ export async function registerRoutes(app: Express): Promise<Server> {
           
           fs.writeFileSync(audioPath, Buffer.from(audioBuffer));
           audioUrl = `/api/audio/${audioFilename}`;
-          console.log("✅ Voice file generated successfully:", audioFilename);
-        } else {
-          const errorText = await ttsResponse.text();
-          console.error("❌ ElevenLabs API Error:", ttsResponse.status, errorText);
+          console.log("✅ OpenAI TTS file generated successfully:", audioFilename);
         }
-      } catch (ttsError) {
-        console.error("❌ Error generating speech:", ttsError);
-        // Continue without audio if TTS fails
+      } catch (openaiTtsError) {
+        console.error("❌ OpenAI TTS failed, trying ElevenLabs fallback:", openaiTtsError);
+        
+        // FALLBACK: Use ElevenLabs if OpenAI TTS fails
+        try {
+          const elevenLabsApiKey = process.env.ELEVENLABS_API_KEY || process.env.ELEVENLABS_API_KEY_ENV_VAR || "default_key";
+          const voiceId = process.env.ELEVENLABS_VOICE_ID || "ErXwobaYiN019PkySvjV";
+          console.log("🎤 Fallback to ElevenLabs voice:", voiceId);
+          
+          const ttsResponse = await fetch(`https://api.elevenlabs.io/v1/text-to-speech/${voiceId}`, {
+            method: 'POST',
+            headers: {
+              'Accept': 'audio/mpeg',
+              'Content-Type': 'application/json',
+              'xi-api-key': elevenLabsApiKey,
+            },
+            body: JSON.stringify({
+              text: jarvisResponse,
+              model_id: "eleven_multilingual_v2",
+              voice_settings: {
+                stability: 0.5,
+                similarity_boost: 0.5,
+              },
+            }),
+          });
+
+          if (ttsResponse.ok) {
+            const audioBuffer = await ttsResponse.arrayBuffer();
+            const audioFilename = `jarvis_${Date.now()}.mp3`;
+            const audioPath = path.join('uploads', audioFilename);
+            
+            if (!fs.existsSync('uploads')) {
+              fs.mkdirSync('uploads');
+            }
+            
+            fs.writeFileSync(audioPath, Buffer.from(audioBuffer));
+            audioUrl = `/api/audio/${audioFilename}`;
+            console.log("✅ ElevenLabs fallback voice file generated:", audioFilename);
+          } else {
+            const errorText = await ttsResponse.text();
+            console.error("❌ ElevenLabs API Error:", ttsResponse.status, errorText);
+          }
+        } catch (elevenLabsError) {
+          console.error("❌ Both OpenAI TTS and ElevenLabs failed:", elevenLabsError);
+          // Continue without audio if both TTS services fail
+        }
       }
 
       // Save JARVIS response to conversation history
