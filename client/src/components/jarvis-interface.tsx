@@ -266,40 +266,25 @@ export default function JarvisInterface({ sessionId }: JarvisInterfaceProps) {
   // UNIFIED: Enhanced Natural Conversation System (Single Recognition Instance)
   const interruptionModeRef = useRef<boolean>(false);
   
-  const handleNaturalInterruption = (userInput: string) => {
-    // ENHANCED: More aggressive interruption - allow shorter phrases
-    if (currentAudioRef.current && userInput.trim().length >= 1) {
-      console.log('🛑 ENHANCED User interruption detected during JARVIS speech:', userInput);
+  const handleVoiceInterruption = (userInput: string) => {
+    // SIMPLE: Only interrupt if JARVIS is actually speaking
+    if (currentAudioRef.current && userInput.trim().length >= 2) {
+      console.log('🛑 User interruption detected:', userInput);
       
-      // IMMEDIATE JARVIS interruption - multiple stop methods for reliability
+      // Stop JARVIS audio immediately
       try {
         currentAudioRef.current.pause();
-        currentAudioRef.current.currentTime = 0; // Reset to beginning
-        currentAudioRef.current.src = ''; // Clear source to fully stop
-        currentAudioRef.current.load(); // Force reload to stop any buffering
-      } catch (audioError) {
-        console.log('Audio stop error (harmless):', audioError);
-      } finally {
-        currentAudioRef.current = null; // Always clear reference
+        currentAudioRef.current = null;
+      } catch (error) {
+        console.log('Audio stop error (harmless):', error);
       }
       
-      setStatus("JARVIS interrupted. Processing your request...");
+      setStatus("Processing your request...");
       
-      // CRITICAL: DON'T destroy recognitionRef - keep conversation alive
-      // Just disable interruption mode temporarily
-      interruptionModeRef.current = false;
-      
-      // Process user's interruption as new command
-      console.log('🎯 Processing interrupted command:', userInput);
+      // Process the interruption as new command
       jarvisMutation.mutate({ 
         message: userInput, 
         sessionId 
-      });
-      
-      toast({
-        title: "JARVIS Interrupted",
-        description: "Processing your new request...",
-        duration: 2000, // Shorter notification duration
       });
       
       return true; // Interruption handled
@@ -307,8 +292,8 @@ export default function JarvisInterface({ sessionId }: JarvisInterfaceProps) {
     return false; // No interruption needed
   };
   
-  // Enhanced voice interruption detection (legacy fallback)
-  const handleVoiceInterruption = () => {
+  // Legacy click interruption (backup method)
+  const handleClickInterruption = () => {
     if (currentAudioRef.current) {
       currentAudioRef.current.pause();
       currentAudioRef.current = null;
@@ -745,32 +730,12 @@ export default function JarvisInterface({ sessionId }: JarvisInterfaceProps) {
       const lastResult = event.results[event.results.length - 1];
       let transcript = lastResult[0].transcript.trim();
       
-      // ENHANCED: Smart confidence filtering for interruptions vs normal speech
+      // SIMPLE: Basic confidence and length checks
       const confidence = lastResult[0].confidence || 0;
-      const isInterrupting = currentAudioRef.current !== null; // JARVIS is speaking
       
-      // SMART FILTERING: Lower threshold for interruptions, higher for normal speech
-      const minConfidence = isInterrupting ? 0.3 : 0.5; // Allow lower confidence for interruptions
-      
-      // NOISE FILTERING: Multiple alternatives analysis for better accuracy
-      if (event.results[event.results.length - 1].length > 1) {
-        const alternatives = Array.from(event.results[event.results.length - 1])
-          .map((alt: any) => ({ transcript: alt.transcript.trim(), confidence: alt.confidence || 0 }))
-          .filter((alt: any) => alt.confidence > (isInterrupting ? 0.2 : minConfidence)) // Even lower for alternatives
-          .sort((a: any, b: any) => b.confidence - a.confidence);
-        
-        if (alternatives.length > 0) {
-          transcript = alternatives[0].transcript;
-          console.log(`🎤 Enhanced: Using best alternative (confidence: ${alternatives[0].confidence}, interrupting: ${isInterrupting})`);
-        }
-      }
-      
-      // SMART LENGTH CHECK: Shorter phrases allowed for interruptions
-      const minLength = isInterrupting ? 1 : 2; // Allow single words for interruptions like "stop", "halt"
-      
-      // ENHANCED FILTERING: Length and content validation
-      if (transcript.length < minLength || confidence < minConfidence) {
-        console.log(`⚠️ Filtered low-confidence input: "${transcript}" (confidence: ${confidence}, interrupting: ${isInterrupting})`);
+      // Basic filtering to prevent noise
+      if (transcript.length < 2 || confidence < 0.6) {
+        console.log(`⚠️ Filtered low-quality input: "${transcript}" (confidence: ${confidence})`);
         return; // Skip low-confidence or too-short inputs
       }
       
@@ -789,43 +754,16 @@ export default function JarvisInterface({ sessionId }: JarvisInterfaceProps) {
       
       console.log(`✅ Clean input accepted: "${transcript}" (confidence: ${confidence})`);
       
-      // ENHANCED: Check for interruption during JARVIS speech (priority interruption handling)
-      if (currentAudioRef.current && lastResult.isFinal && transcript.length >= 1) {
-        console.log(`🛑 IMMEDIATE INTERRUPTION detected: "${transcript}" while JARVIS speaking`);
-        const interrupted = handleNaturalInterruption(transcript);
+      // SIMPLE: Check for interruption during JARVIS speech
+      if (currentAudioRef.current && lastResult.isFinal) {
+        console.log(`🛑 User interruption detected: "${transcript}"`);
+        const interrupted = handleVoiceInterruption(transcript);
         if (interrupted) {
           return; // Interruption handled, don't process as normal command
         }
       }
       
-      // LEGACY: Unified interruption check (secondary)
-      if (interruptionModeRef.current && lastResult.isFinal && transcript.length > 1) {
-        const interrupted = handleNaturalInterruption(transcript);
-        if (interrupted) {
-          return; // Interruption handled, don't process as normal command
-        }
-      }
       
-      // Legacy interruption check (keep for compatibility)
-      if (currentAudioRef.current && transcript.length > 3 && lastResult.isFinal) {
-        console.log('🛑 USER INTERRUPTION detected while JARVIS speaking:', transcript);
-        currentAudioRef.current.pause();
-        currentAudioRef.current.currentTime = 0;
-        currentAudioRef.current.src = '';
-        currentAudioRef.current = null;
-        setStatus("JARVIS interrupted. Processing your request...");
-        
-        // Process interruption as new command
-        try {
-          await jarvisMutation.mutateAsync({
-            message: transcript,
-            sessionId,
-          });
-        } catch (error) {
-          console.error('Error processing interruption:', error);
-        }
-        return;
-      }
       
       // Only process final results as normal commands
       if (lastResult.isFinal && !currentAudioRef.current) {
