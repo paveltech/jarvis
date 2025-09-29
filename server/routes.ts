@@ -196,6 +196,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           }
         } catch (openaiTtsError) {
           console.error("❌ Both ElevenLabs and OpenAI TTS failed:", openaiTtsError);
+          console.log("⚠️ PRESENTATION WARNING: No TTS available - JARVIS will be silent!");
           // Continue without audio if both TTS services fail
         }
       }

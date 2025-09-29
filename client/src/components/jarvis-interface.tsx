@@ -121,9 +121,10 @@ export default function JarvisInterface({ sessionId }: JarvisInterfaceProps) {
     
     const loadOptimizedWidget = async () => {
       try {
-        // Only load on production domain (not localhost/dev)
-        if (window.location.hostname.includes('localhost') || window.location.hostname.includes('127.0.0.1')) {
-          console.log('⚠️ Skipping ElevenLabs on development - use published URL');
+        // PRESENTATION MODE: Allow ElevenLabs for local demos
+        const allowLocalDemo = import.meta.env.VITE_ALLOW_LOCAL_ELEVENLABS === 'true';
+        if (!allowLocalDemo && (window.location.hostname.includes('localhost') || window.location.hostname.includes('127.0.0.1'))) {
+          console.log('⚠️ Skipping ElevenLabs on development - set VITE_ALLOW_LOCAL_ELEVENLABS=true for local demos');
           return;
         }
         
@@ -368,19 +369,21 @@ export default function JarvisInterface({ sessionId }: JarvisInterfaceProps) {
     window.onerror = (message, filename, lineno, colno, error) => {
       console.log('Window.onerror caught:', { message, filename, lineno, colno, error });
       
-      // Check if this is an ElevenLabs-related error
+      // SELECTIVE: Only suppress clearly ElevenLabs-related errors, not generic ones
       const msgStr = String(message || '');
       const fileStr = String(filename || '');
       
+      // Only suppress if explicitly ElevenLabs-related, not generic script errors
       if (
-        msgStr === 'Script error.' ||
-        msgStr.includes('elevenlabs') ||
-        fileStr.includes('elevenlabs') ||
-        (msgStr === '' && fileStr === '' && lineno === 0)
+        (msgStr.toLowerCase().includes('elevenlabs') || fileStr.toLowerCase().includes('elevenlabs')) &&
+        (msgStr !== 'Script error.' || fileStr.includes('elevenlabs'))
       ) {
-        console.log('Suppressed ElevenLabs error via window.onerror');
+        console.log('Suppressed confirmed ElevenLabs error via window.onerror:', msgStr);
         return true; // Prevent default error handling
       }
+      
+      // PRESENTATION SAFETY: Log all other errors for debugging
+      console.warn('🚨 Non-ElevenLabs error detected:', { message: msgStr, filename: fileStr, lineno, colno });
       
       // Call original handler for other errors
       if (originalOnError) {
