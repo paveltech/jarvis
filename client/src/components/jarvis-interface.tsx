@@ -733,8 +733,8 @@ export default function JarvisInterface({ sessionId }: JarvisInterfaceProps) {
       // SIMPLE: Basic confidence and length checks
       const confidence = lastResult[0].confidence || 0;
       
-      // Basic filtering to prevent noise
-      if (transcript.length < 2 || confidence < 0.6) {
+      // BALANCED: ChatGPT-like filtering (not too sensitive, not too sluggish)
+      if (transcript.length < 2 || confidence < 0.4) {
         console.log(`⚠️ Filtered low-quality input: "${transcript}" (confidence: ${confidence})`);
         return; // Skip low-confidence or too-short inputs
       }
