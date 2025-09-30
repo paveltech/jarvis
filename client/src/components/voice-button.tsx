@@ -19,16 +19,59 @@ export default function VoiceButton({
   conversationMode = false,
   isWaitingForResponse = false
 }: VoiceButtonProps) {
-  
+  const [isActive, setIsActive] = useState(false);
+  // Mirror JARVIS widget logic: start/end via ElevenLabs widget if present
+  const getWidget = (): any | null => document.querySelector('elevenlabs-convai') as any;
+  const getWidgetRoot = (widget: any): ShadowRoot | Document => (widget as any).shadowRoot || document;
+  const clickStartOnWidget = (widget: any) => {
+    const root = getWidgetRoot(widget);
+    const startBtn = (root as any)?.querySelector?.(
+      'button[aria-label="Start a call"], button[aria-label="Start"]'
+    ) as HTMLButtonElement | null;
+    if (startBtn) startBtn.click(); else widget.startConversation?.();
+  };
+  const clickEndOnWidget = (widget: any) => {
+    const root = getWidgetRoot(widget);
+    const endBtn = (root as any)?.querySelector?.(
+      'button[aria-label="End"], button[aria-label="End call"], button[aria-label="Stop"]'
+    ) as HTMLButtonElement | null;
+    if (endBtn) endBtn.click(); else widget.endConversation?.();
+  };
+  const isWidgetRunning = (widget: any): boolean => {
+    const root = getWidgetRoot(widget);
+    const endBtn = (root as any)?.querySelector?.(
+      'button[aria-label="End"], button[aria-label="End call"], button[aria-label="Stop"]'
+    ) as HTMLButtonElement | null;
+    return !!endBtn;
+  };
+
   const handleClick = () => {
     if (isProcessing) return;
-    
-    if (isRecording) {
-      onStopRecording();
-    } else {
-      onStartRecording();
+
+    const widget = getWidget();
+    if (widget) {
+      try {
+        // Toggle purely via local state for the button label
+        if (!isActive) {
+          clickStartOnWidget(widget);
+          setIsActive(true);
+        } else {
+          clickEndOnWidget(widget);
+          setIsActive(false);
+        }
+      } catch (e) {
+        // Fallback to existing behavior
+        if (!isActive) onStartRecording(); else onStopRecording();
+        setIsActive(!isActive);
+      }
+      return;
     }
+
+    // Fallback: existing behavior
+    if (!isActive) onStartRecording(); else onStopRecording();
+    setIsActive(!isActive);
   };
+
 
   return (
     <div className="relative">
@@ -65,7 +108,7 @@ export default function VoiceButton({
           data-testid="voice-button"
         >
           <div className="flex items-center space-x-2">
-            {conversationMode ? (
+            {isActive ? (
               // In conversation mode
               isRecording ? (
                 <>

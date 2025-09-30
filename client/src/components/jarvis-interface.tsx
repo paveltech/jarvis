@@ -35,6 +35,7 @@ export default function JarvisInterface({ sessionId }: JarvisInterfaceProps) {
   const recognitionRef = useRef<any>(null);
   const interruptRecognitionRef = useRef<any>(null);
   const currentAudioRef = useRef<HTMLAudioElement | null>(null);
+  const firstPressHandledRef = useRef<boolean>(false);
   
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const audioChunksRef = useRef<Blob[]>([]);
@@ -263,6 +264,119 @@ export default function JarvisInterface({ sessionId }: JarvisInterfaceProps) {
       }
     };
   }, [sessionId]);
+
+  // Auto-start ElevenLabs on page load: click Start button or call API with retries
+  useEffect(() => {
+    let cancelled = false;
+    let attempts = 0;
+    const maxAttempts = 12; // ~6s total
+
+    const tryStart = () => {
+      if (cancelled) return true;
+      const widget = document.querySelector('elevenlabs-convai') as any;
+      if (!widget) return false;
+      try {
+        const root: ShadowRoot | Document = (widget as any).shadowRoot || document;
+        const startBtn = (root as any)?.querySelector?.(
+          'button[aria-label="Start a call"], button[aria-label="Start"]'
+        ) as HTMLButtonElement | null;
+        if (startBtn) {
+          startBtn.click();
+          // Do not mark conversation as started yet; widget may only be opened
+          return true;
+        }
+        if (typeof widget.startConversation === 'function') {
+          widget.startConversation();
+          // Rely on widget events to set conversation state
+          return true;
+        }
+      } catch {
+        // ignore and retry
+      }
+      return false;
+    };
+
+    const tick = () => {
+      if (cancelled) return;
+      if (tryStart()) return;
+      attempts += 1;
+      if (attempts < maxAttempts) setTimeout(tick, 500);
+    };
+
+    setTimeout(tick, 500);
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  // Keep conversationMode in sync with real widget events (start/end)
+  useEffect(() => {
+    const widget = document.querySelector('elevenlabs-convai') as any;
+    if (!widget) return;
+    const onStart = () => {
+      setConversationMode(true);
+      setStatus('JARVIS is listening, sir...');
+    };
+    const onEnd = () => {
+      setConversationMode(false);
+      setStatus('Ready for your command, sir.');
+    };
+    const onError = () => {
+      setConversationMode(false);
+    };
+    widget.addEventListener?.('start', onStart);
+    widget.addEventListener?.('end', onEnd);
+    widget.addEventListener?.('error', onError);
+    return () => {
+      widget.removeEventListener?.('start', onStart);
+      widget.removeEventListener?.('end', onEnd);
+      widget.removeEventListener?.('error', onError);
+    };
+  }, []);
+
+  // Auto-click Accept button on page load if present
+  useEffect(() => {
+    let cancelled = false;
+    let attempts = 0;
+    const maxAttempts = 20; // ~10s at 500ms
+
+    const tryClickAccept = () => {
+      if (cancelled) return true;
+      const widget = document.querySelector('elevenlabs-convai') as any;
+      if (!widget) return false;
+      try {
+        const root: ShadowRoot | Document = (widget as any).shadowRoot || document;
+        
+        // Search all buttons for "Accept" text
+        const buttons = (root as any)?.querySelectorAll?.('button') || [];
+        for (const btn of buttons) {
+          const span = btn.querySelector('span');
+          if (span && span.textContent?.trim() === 'Accept') {
+            btn.click();
+            console.log('✅ Auto-clicked Accept button (terms modal)');
+            return true;
+          }
+        }
+      } catch (e) {
+        console.log('Accept button click error:', e);
+      }
+      return false;
+    };
+
+    const tick = () => {
+      if (cancelled) return;
+      if (tryClickAccept()) return;
+      attempts += 1;
+      if (attempts < maxAttempts) {
+        setTimeout(tick, 500);
+      }
+    };
+
+    setTimeout(tick, 500);
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   // UNIFIED: Enhanced Natural Conversation System (Single Recognition Instance)
   const interruptionModeRef = useRef<boolean>(false);
@@ -889,6 +1003,41 @@ export default function JarvisInterface({ sessionId }: JarvisInterfaceProps) {
     }
   };
 
+  // ===== ElevenLabs widget helpers (shared by red button and VoiceButton) =====
+  const getWidget = (): any | null => document.querySelector('elevenlabs-convai') as any;
+  const getWidgetRoot = (widget: any): ShadowRoot | Document => (widget as any).shadowRoot || document;
+
+  const clickStartOnWidget = (widget: any) => {
+    const root = getWidgetRoot(widget);
+    const startBtn = (root as any)?.querySelector?.(
+      'button[aria-label="Start a call"], button[aria-label="Start"]'
+    ) as HTMLButtonElement | null;
+    if (startBtn) startBtn.click(); else widget.startConversation?.();
+  };
+
+  const clickEndOnWidget = (widget: any) => {
+    const root = getWidgetRoot(widget);
+    const endBtn = (root as any)?.querySelector?.(
+      'button[aria-label="End"], button[aria-label="End call"], button[aria-label="Stop"]'
+    ) as HTMLButtonElement | null;
+    if (endBtn) endBtn.click(); else widget.endConversation?.();
+  };
+
+  const isWidgetRunning = (widget: any): boolean => {
+    const root = getWidgetRoot(widget);
+    const endBtn = (root as any)?.querySelector?.(
+      'button[aria-label="End"], button[aria-label="End call"], button[aria-label="Stop"]'
+    ) as HTMLButtonElement | null;
+    return !!endBtn;
+  };
+
+  const forceRestartFirstPress = async (widget: any) => {
+    // Clean restart: end then start
+    clickEndOnWidget(widget);
+    await new Promise((r) => setTimeout(r, 200));
+    clickStartOnWidget(widget);
+  };
+
   // CRITICAL: Manual audio processing for push-to-talk Voice Button
   const processAudioInput = async (audioBlob: Blob) => {
     console.log('🎤 Processing manual audio input (push-to-talk)');
@@ -1034,7 +1183,11 @@ export default function JarvisInterface({ sessionId }: JarvisInterfaceProps) {
               className="absolute inset-0 flex items-center justify-center z-20"
               style={{ opacity: 0, pointerEvents: 'auto' }}
             />
-
+            <elevenlabs-convai
+              agent-id="agent_0601k62vhrxafx98s1k6zshc6n7t"
+              client-events="interruption,start,end,error"
+              style={{display: 'none'}}
+            ></elevenlabs-convai>
           {/* J.A.R.V.I.S Text - Authentic font and glow - ENHANCED LIKE ORIGINAL + CLICKABLE */}
             <span 
               className="relative z-10 text-white text-xl animate-jarvis-text-glow cursor-pointer hover:scale-105 transition-transform duration-200" 
